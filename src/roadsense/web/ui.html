@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RoadSense Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --ground:#f1f3f6; --surface:#fff; --sunk:#e7eaf0; --ink:#14171c; --muted:#5a6472;
+  --faint:#8d96a5; --rule:#d8dde6; --chosen:#2f3fb8; --on-chosen:#fff;
+  --chosen-soft:#dfe3f7; --dim:#c3cada; --warn:#9c4a09; --warn-soft:#f6e8d8;
+  --good:#0e6b7d; --good-soft:#d9eef2;
+  --shadow:0 1px 2px rgba(20,23,28,.06), 0 8px 24px -16px rgba(20,23,28,.3);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:#0e1116; --surface:#161a21; --sunk:#1c212a; --ink:#e9ecf1; --muted:#949dad;
+    --faint:#6d7686; --rule:#272d38; --chosen:#8c99ff; --on-chosen:#0e1116;
+    --chosen-soft:#232a4a; --dim:#39414f; --warn:#e0a165; --warn-soft:#2e2418;
+    --good:#5ab6c7; --good-soft:#15262b;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"] {
+  --ground:#0e1116; --surface:#161a21; --sunk:#1c212a; --ink:#e9ecf1; --muted:#949dad;
+  --faint:#6d7686; --rule:#272d38; --chosen:#8c99ff; --on-chosen:#0e1116;
+  --chosen-soft:#232a4a; --dim:#39414f; --warn:#e0a165; --warn-soft:#2e2418;
+  --good:#5ab6c7; --good-soft:#15262b;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;line-height:1.55;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:36px 24px 80px}
+
+header{border-bottom:1px solid var(--rule);padding-bottom:22px;margin-bottom:28px;
+  display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.brand{flex:1;min-width:280px}
+.eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+h1{font-family:"Instrument Serif",Georgia,serif;font-weight:400;
+  font-size:clamp(32px,5vw,50px);line-height:1.02;letter-spacing:-.012em;margin:0 0 10px}
+h1 em{font-style:italic;color:var(--chosen)}
+.lede{margin:0;color:var(--muted);font-size:16px;max-width:60ch}
+.pill{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;
+  padding:7px 13px;border-radius:999px;border:1px solid var(--rule);
+  background:var(--surface);color:var(--muted);white-space:nowrap}
+.pill.ready{border-color:var(--good);color:var(--good);background:var(--good-soft)}
+.pill.loading{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+
+.cols{display:grid;grid-template-columns:340px minmax(0,1fr);gap:32px;align-items:start}
+@media (max-width:900px){.cols{grid-template-columns:1fr}}
+
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:5px;
+  padding:18px;box-shadow:var(--shadow)}
+.panel + .panel{margin-top:16px}
+.label{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:0 0 10px}
+
+.drop{border:1.5px dashed var(--rule);border-radius:4px;padding:20px;text-align:center;
+  cursor:pointer;transition:border-color .15s,background .15s;color:var(--muted);font-size:14px}
+.drop:hover,.drop.over{border-color:var(--chosen);background:var(--chosen-soft)}
+.drop input{display:none}
+#preview{width:100%;border-radius:4px;border:1px solid var(--rule);display:none;margin-top:12px}
+.clear-img{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;
+  padding:6px 0 0;text-decoration:underline;display:none}
+
+.samples{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.samples button{padding:0;border:1px solid var(--rule);border-radius:4px;overflow:hidden;
+  background:var(--sunk);cursor:pointer;transition:border-color .15s,transform .1s}
+.samples button:hover{border-color:var(--chosen);transform:translateY(-1px)}
+.samples button[aria-pressed="true"]{border-color:var(--chosen);box-shadow:0 0 0 2px var(--chosen-soft)}
+.samples img{width:100%;display:block;aspect-ratio:3/2;object-fit:cover}
+.samples .cap{display:block;font-size:10px;color:var(--muted);padding:4px 5px;
+  line-height:1.25;text-align:left}
+.samples button:focus-visible{outline:2px solid var(--chosen);outline-offset:2px}
+
+textarea{width:100%;border:1px solid var(--rule);border-radius:4px;padding:10px 12px;
+  font-family:inherit;font-size:14.5px;background:var(--ground);color:var(--ink);
+  resize:vertical;min-height:70px}
+textarea:focus{outline:2px solid var(--chosen);outline-offset:-1px;border-color:var(--chosen)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.chip{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--rule);
+  background:var(--ground);color:var(--muted);cursor:pointer}
+.chip:hover{border-color:var(--chosen);color:var(--chosen)}
+
+.run{width:100%;margin-top:16px;padding:13px;border:none;border-radius:4px;
+  background:var(--chosen);color:var(--on-chosen);font-family:inherit;font-size:15px;
+  font-weight:600;cursor:pointer;transition:opacity .15s}
+.run:hover:not(:disabled){opacity:.9}
+.run:disabled{opacity:.45;cursor:not-allowed}
+.opts{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.opts input{accent-color:var(--chosen)}
+
+.stage{min-height:420px}
+.empty-stage{border:1.5px dashed var(--rule);border-radius:5px;padding:56px 28px;
+  text-align:center;color:var(--faint)}
+.empty-stage p{margin:0 0 8px;font-family:"Instrument Serif",Georgia,serif;font-size:21px;color:var(--muted)}
+.empty-stage span{font-size:14px}
+
+.how{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.how div{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--rule);
+  border-radius:4px;padding:11px 13px}
+.how b{display:block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--chosen);margin-bottom:4px;font-weight:500}
+.how span{font-size:13px;color:var(--muted);line-height:1.4}
+
+.step{border-top:1px solid var(--rule);padding:20px 0 6px;animation:rise .35s ease both}
+.step:first-child{border-top:none;padding-top:4px}
+@keyframes rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.step-head{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;margin-bottom:14px}
+.step-n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10.5px;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--faint)}
+.step-pick{font-family:"Instrument Serif",Georgia,serif;font-size:22px}
+.ms{margin-left:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;
+  padding:3px 9px;border-radius:999px;background:var(--chosen-soft);color:var(--chosen);
+  font-variant-numeric:tabular-nums}
+.menu-count{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;color:var(--faint)}
+
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar-row{display:grid;grid-template-columns:184px minmax(0,1fr) 62px;align-items:center;gap:12px}
+@media (max-width:620px){.bar-row{grid-template-columns:128px minmax(0,1fr) 52px}}
+.bar-label{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;
+  color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{display:block;height:19px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.bar-fill{display:block;height:100%;width:0;background:var(--dim);border-radius:2px;
+  transition:width .5s cubic-bezier(.22,.8,.3,1)}
+.bar-val{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;color:var(--muted);
+  text-align:right;font-variant-numeric:tabular-nums}
+.is-chosen .bar-fill{background:var(--chosen)}
+.is-chosen .bar-label{color:var(--ink);font-weight:500}
+.is-chosen .bar-val{color:var(--chosen);font-weight:500}
+.withdrawn .bar-label{color:var(--faint);text-decoration:line-through;text-decoration-thickness:1px}
+.withdrawn .bar-track{background:transparent;border:1px dashed var(--rule)}
+.withdrawn .bar-val{color:var(--faint);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+
+.readouts{display:flex;gap:20px;flex-wrap:wrap;margin-top:13px}
+.readout{display:flex;align-items:baseline;gap:6px}
+.readout-k{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+.readout-v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13.5px;
+  font-variant-numeric:tabular-nums}
+.readout-v.good{color:var(--good)}
+
+.evidence{margin-top:14px;padding:13px 15px;background:var(--surface);border:1px solid var(--rule);
+  border-left:2px solid var(--chosen);border-radius:3px;animation:rise .3s ease both}
+.evidence.empty{border-left-color:var(--warn)}
+.ev-head{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:5px;display:flex;gap:10px;flex-wrap:wrap}
+.ev-body{margin:0;font-size:14.5px}
+.note{margin-top:11px;padding:9px 12px;border-radius:3px;background:var(--warn-soft);
+  color:var(--warn);font-size:13px}
+
+.outcome{border-top:1px solid var(--rule);margin-top:24px;padding-top:20px;animation:rise .35s ease both}
+.tag{display:inline-block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;
+  letter-spacing:.09em;text-transform:uppercase;padding:4px 9px;border-radius:3px;
+  margin-bottom:12px;background:var(--chosen-soft);color:var(--chosen)}
+.tag.insufficient{background:var(--warn-soft);color:var(--warn)}
+.answer{font-family:"Instrument Serif",Georgia,serif;font-size:21px;line-height:1.42;
+  margin:0;max-width:62ch;text-wrap:pretty}
+.totals{margin-top:14px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;
+  color:var(--faint);display:flex;gap:18px;flex-wrap:wrap}
+.err{padding:14px;border-radius:4px;background:var(--warn-soft);color:var(--warn);font-size:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <p class="eyebrow">Strands Decider 2B &middot; tool selection</p>
+      <h1>It decides, looks, then <em>decides again</em></h1>
+      <p class="lede">Give it a photo and a question. It has four things it can do, and
+        it picks one at a time &mdash; seeing what came back before choosing the next.</p>
+    </div>
+    <span class="pill loading" id="status">checking…</span>
+  </header>
+
+  <div class="cols">
+    <div>
+      <div class="panel">
+        <p class="label">1 &middot; the photo</p>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept="image/jpeg,image/png">
+          Drop an image here, or click to choose
+        </label>
+        <img id="preview" alt="Selected photograph">
+        <button class="clear-img" id="clearImg" type="button">remove image</button>
+      </div>
+
+      <div class="panel">
+        <p class="label">or try one of these</p>
+        <div class="samples" id="samples"></div>
+      </div>
+
+      <div class="panel">
+        <p class="label">2 &middot; the question</p>
+        <textarea id="question">What vehicles appear and what text can be read on the sign?</textarea>
+        <div class="chips" id="chips"></div>
+        <div class="opts">
+          <input type="checkbox" id="suff" checked>
+          <label for="suff">ask the extra &ldquo;is this enough?&rdquo; question (slower)</label>
+        </div>
+        <button class="run" id="run" disabled>Run the agent</button>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="how">
+        <div><b>step 1</b><span>Four actions on the menu. Decider scores every one.</span></div>
+        <div><b>then</b><span>The chosen tool runs and reports what it found.</span></div>
+        <div><b>step 2</b><span>A used-up tool leaves the menu. It decides again.</span></div>
+      </div>
+      <div class="empty-stage">
+        <p>Nothing decided yet.</p>
+        <span>Pick a photo and press Run.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ORDER = ["detect_objects","read_sign_text","request_better_evidence","answer"];
+const LABEL = {detect_objects:"detect objects", read_sign_text:"read sign text",
+               request_better_evidence:"request better evidence", answer:"answer"};
+const QUESTIONS = [
+  "What vehicles appear and what text can be read on the sign?",
+  "What does the sign say?",
+  "What objects are visible in this scene?",
+  "Are there any people in this image?",
+];
+
+const $ = (s) => document.querySelector(s);
+const stage = $("#stage"), runBtn = $("#run"), fileInput = $("#file"),
+      preview = $("#preview"), clearImg = $("#clearImg"), drop = $("#drop");
+let chosenSample = null;
+const fmt = (n, d=3) => (n === null || n === undefined) ? "—" : Number(n).toFixed(d);
+
+QUESTIONS.forEach(q => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.type = "button"; b.textContent = q;
+  b.onclick = () => { $("#question").value = q; };
+  $("#chips").append(b);
+});
+
+function showPreview(src) {
+  preview.src = src; preview.style.display = "block"; clearImg.style.display = "block";
+}
+function clearPreview() {
+  preview.removeAttribute("src"); preview.style.display = "none";
+  clearImg.style.display = "none"; fileInput.value = ""; chosenSample = null;
+  document.querySelectorAll('.samples button').forEach(b => b.setAttribute("aria-pressed","false"));
+}
+clearImg.onclick = clearPreview;
+
+fileInput.onchange = () => {
+  const f = fileInput.files[0];
+  if (!f) return;
+  chosenSample = null;
+  document.querySelectorAll('.samples button').forEach(b => b.setAttribute("aria-pressed","false"));
+  showPreview(URL.createObjectURL(f));
+};
+["dragenter","dragover"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.add("over");
+}));
+["dragleave","drop"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.remove("over");
+}));
+drop.addEventListener("drop", ev => {
+  const f = ev.dataTransfer.files[0];
+  if (f) { fileInput.files = ev.dataTransfer.files; fileInput.onchange(); }
+});
+
+async function loadStatus() {
+  try {
+    const s = await (await fetch("/api/status")).json();
+    const pill = $("#status");
+    if (s.ready) {
+      pill.className = "pill ready";
+      pill.textContent = `ready · ${s.device} · ${s.checkpoint.split("/").pop()}`;
+      runBtn.disabled = false;
+    } else {
+      pill.className = "pill loading";
+      pill.textContent = "loading the model…";
+      setTimeout(loadStatus, 3000);
+    }
+    const box = $("#samples");
+    if (!box.childElementCount) {
+      s.samples.forEach(sm => {
+        const b = document.createElement("button");
+        b.type = "button"; b.setAttribute("aria-pressed","false"); b.title = sm.caption;
+        b.innerHTML = `<img src="/api/sample/${sm.name}" alt="${sm.caption}">` +
+                      `<span class="cap">${sm.caption}</span>`;
+        b.onclick = () => {
+          document.querySelectorAll('.samples button').forEach(x => x.setAttribute("aria-pressed","false"));
+          b.setAttribute("aria-pressed","true");
+          chosenSample = sm.name; fileInput.value = "";
+          showPreview(`/api/sample/${sm.name}`);
+        };
+        box.append(b);
+      });
+    }
+  } catch (e) {
+    $("#status").textContent = "server unreachable";
+    setTimeout(loadStatus, 4000);
+  }
+}
+loadStatus();
+
+function renderDecision(ev) {
+  const el = document.createElement("div");
+  el.className = "step";
+  const forced = !ev.decider_called;
+  el.innerHTML =
+    `<div class="step-head"><span class="step-n">Step ${ev.step}</span>` +
+    `<span class="step-pick">${LABEL[ev.action] || ev.action}</span>` +
+    `<span class="menu-count">${ev.offered.length || 4} of 4 on the menu</span>` +
+    `<span class="ms">${forced ? "forced" : ev.latency_ms + " ms"}</span></div>`;
+
+  const bars = document.createElement("div");
+  bars.className = "bars";
+  const fills = [];
+  ORDER.forEach(a => {
+    const offered = ev.offered.includes(a);
+    const p = ev.probabilities[a];
+    const row = document.createElement("div");
+    row.className = "bar-row" + (a === ev.action ? " is-chosen" : "") + (offered ? "" : " withdrawn");
+    row.innerHTML = `<span class="bar-label">${LABEL[a]}</span>` +
+      `<span class="bar-track"><span class="bar-fill"></span></span>` +
+      `<span class="bar-val">${offered && p !== undefined ? fmt(p) : "withdrawn"}</span>`;
+    bars.append(row);
+    if (offered && p !== undefined) fills.push([row.querySelector(".bar-fill"), p]);
+  });
+  el.append(bars);
+
+  const r = document.createElement("div");
+  r.className = "readouts";
+  r.innerHTML =
+    `<span class="readout"><span class="readout-k">confidence</span>` +
+    `<span class="readout-v">${forced ? "n/a" : fmt(ev.confidence)}</span></span>` +
+    `<span class="readout"><span class="readout-k">P(evidence enough)</span>` +
+    `<span class="readout-v good">${fmt(ev.evidence_sufficient)}</span></span>`;
+  el.append(r);
+
+  if (ev.rejected) {
+    const n = document.createElement("div");
+    n.className = "note";
+    n.textContent = "Policy overruled this pick: " + ev.rejected;
+    el.append(n);
+  }
+  stage.append(el);
+  requestAnimationFrame(() => fills.forEach(([node,p],i) =>
+    setTimeout(() => node.style.width = (p*100) + "%", 40 + i*40)));
+}
+
+function renderEvidence(ev) {
+  const e = ev.evidence;
+  const box = document.createElement("div");
+  const empty = !e.ok || e.quality === null;
+  box.className = "evidence" + (empty ? " empty" : "");
+  const q = e.quality === null ? "no confidence reported" : "tool confidence " + fmt(e.quality, 2);
+  box.innerHTML = `<div class="ev-head"><span>${e.tool} returned</span><span>${q}</span>` +
+                  `<span>${Math.round(e.duration_ms)} ms</span></div><p class="ev-body"></p>`;
+  box.querySelector(".ev-body").textContent = e.summary;
+  (stage.lastElementChild || stage).append(box);
+}
+
+function renderAnswer(ev) {
+  const c = ev.trace.cost || {};
+  const out = document.createElement("div");
+  out.className = "outcome";
+  out.innerHTML =
+    `<span class="tag${ev.outcome === "answered" ? "" : " insufficient"}">` +
+    `${ev.outcome.replace(/_/g," ")}</span><p class="answer"></p>` +
+    `<div class="totals"><span>${ev.elapsed_ms} ms end to end</span>` +
+    `<span>${c.rekognition_calls ?? 0} vision calls</span>` +
+    `<span>${c.bedrock_input_tokens ?? 0} in / ${c.bedrock_output_tokens ?? 0} out Bedrock tokens</span>` +
+    `<span>0 billable selector tokens</span></div>`;
+  out.querySelector(".answer").textContent = ev.answer || "(no answer returned)";
+  stage.append(out);
+}
+
+runBtn.onclick = async () => {
+  const body = new FormData();
+  body.append("question", $("#question").value.trim() || "What is in this scene?");
+  body.append("ask_sufficiency", $("#suff").checked ? "true" : "false");
+  if (chosenSample) body.append("sample", chosenSample);
+  else if (fileInput.files[0]) body.append("image", fileInput.files[0]);
+
+  stage.innerHTML = "";
+  runBtn.disabled = true; runBtn.textContent = "deciding…";
+
+  try {
+    const res = await fetch("/api/run", {method: "POST", body});
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream: true});
+      const lines = buf.split("\n");
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const ev = JSON.parse(line);
+        if (ev.type === "decision") renderDecision(ev);
+        else if (ev.type === "evidence") renderEvidence(ev);
+        else if (ev.type === "answer") renderAnswer(ev);
+        else if (ev.type === "error") {
+          const d = document.createElement("div");
+          d.className = "err"; d.textContent = ev.message; stage.append(d);
+        }
+      }
+    }
+  } catch (e) {
+    const d = document.createElement("div");
+    d.className = "err"; d.textContent = "Request failed: " + e.message; stage.append(d);
+  } finally {
+    runBtn.disabled = false; runBtn.textContent = "Run the agent";
+  }
+};
+</script>
+</body>
+</html>

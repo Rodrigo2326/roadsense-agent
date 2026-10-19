@@ -200,7 +200,19 @@ class EvidenceSeeker(Generic[S]):
                 return alt, f"picked {first} but {why}; fell back to its next legal preference"
         return self.fallback_action, f"no legal action available ({why})"
 
-    def run(self, state: S, decider: DecisionBackend) -> Episode:
+    def run(
+        self,
+        state: S,
+        decider: DecisionBackend,
+        on_step: Callable[[Step], None] | None = None,
+    ) -> Episode:
+        """Drive the loop to a terminal action or the budget.
+
+        ``on_step`` is called with each step *after* it is decided and *before* it is
+        executed. That ordering is what lets a live view show the decision and then
+        the evidence it produced, in the order they actually happened, rather than
+        replaying a finished episode.
+        """
         episode = Episode()
 
         while True:
@@ -220,6 +232,8 @@ class EvidenceSeeker(Generic[S]):
                     )
                 )
                 episode.stop_reason = StopReason.BUDGET
+                if on_step is not None:
+                    on_step(episode.steps[-1])
                 self.execute(state, self.fallback_action)
                 return episode
 
@@ -242,6 +256,9 @@ class EvidenceSeeker(Generic[S]):
                     decider_called=True,
                 )
             )
+
+            if on_step is not None:
+                on_step(episode.steps[-1])
 
             self.execute(state, action)
             if self.actions[action].terminal:

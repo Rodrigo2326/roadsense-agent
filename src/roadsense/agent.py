@@ -14,9 +14,9 @@ the evidence that the pattern is reusable. The same ``EvidenceSeeker`` drives
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from . import policy
 from .bedrock_client import DEFAULT_MODEL_ID, BedrockAnswer, write_answer
@@ -62,15 +62,26 @@ def _read_image(state: AgentState) -> bytes | None:
         return None
 
 
-def _make_executor(rekognition: Any, counter: dict[str, int]):
+def _make_executor(
+    rekognition: Any,
+    counter: dict[str, int],
+    emit: Callable[[dict[str, Any]], None],
+):
     """Build the ``execute`` callback the seeker calls for each chosen action."""
+
+    def _report(evidence: Evidence) -> None:
+        state_evidence = asdict(evidence)
+        state_evidence.pop("raw", None)  # the raw API payload is for the trace, not the wire
+        emit({"type": "evidence", "evidence": state_evidence})
 
     def execute(state: AgentState, action: str) -> None:
         if action == "answer":
             return  # Bedrock writes the answer after the episode ends.
 
         if action == "request_better_evidence":
-            state.evidence.append(request_better_evidence(state))
+            evidence = request_better_evidence(state)
+            state.evidence.append(evidence)
+            _report(evidence)
             return
 
         if action not in TOOL_ACTIONS:
@@ -80,14 +91,14 @@ def _make_executor(rekognition: Any, counter: dict[str, int]):
         if image is None:
             # Legality should have caught this. If the file vanished between the
             # check and the read, record it as evidence rather than crashing.
-            state.evidence.append(
-                Evidence(
-                    tool=action,
-                    ok=False,
-                    summary="The tool could not run because the image was unreadable.",
-                    error=state.errors[-1] if state.errors else "unreadable image",
-                )
+            unreadable = Evidence(
+                tool=action,
+                ok=False,
+                summary="The tool could not run because the image was unreadable.",
+                error=state.errors[-1] if state.errors else "unreadable image",
             )
+            state.evidence.append(unreadable)
+            _report(unreadable)
             return
 
         fn = detect_objects if action == "detect_objects" else read_sign_text
@@ -96,6 +107,7 @@ def _make_executor(rekognition: Any, counter: dict[str, int]):
         state.evidence.append(evidence)
         if not evidence.ok and evidence.error:
             state.errors.append(f"{action}: {evidence.error}")
+        _report(evidence)
 
     return execute
 
@@ -111,16 +123,27 @@ def run(
     bedrock_model: str = DEFAULT_MODEL_ID,
     pricing: dict[str, Any] | None = None,
     mask_illegal_actions: bool = True,
+    on_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> AgentResult:
+    """Run one episode.
+
+    ``on_event`` receives dicts as the episode unfolds -- ``decision`` when a step is
+    chosen, ``evidence`` when a tool reports back, ``answer`` at the end. It is what
+    the live web view consumes; everything else reads the finished trace.
+    """
     t_start = time.perf_counter()
     state = AgentState(question=question, image_path=image_path, max_steps=max_steps)
     counter = {"rekognition": 0}
+
+    def emit(event: dict[str, Any]) -> None:
+        if on_event is not None:
+            on_event(event)
 
     seeker: EvidenceSeeker[AgentState] = EvidenceSeeker(
         actions=ROADSENSE_ACTIONS,
         render_state=lambda s, progress: s.render_for_decider(progress.steps_used),
         is_legal=policy.legality,
-        execute=_make_executor(rekognition, counter),
+        execute=_make_executor(rekognition, counter, emit),
         max_steps=max_steps,
         fallback_action="answer",
         mask_illegal=mask_illegal_actions,
@@ -143,7 +166,21 @@ def run(
     class _Backend:
         decide = staticmethod(decide_and_capture)
 
-    episode = seeker.run(state, _Backend())
+    def report_step(step) -> None:
+        emit({
+            "type": "decision",
+            "step": step.index,
+            "action": step.action,
+            "confidence": step.confidence,
+            "probabilities": step.probabilities,
+            "offered": step.offered,
+            "rejected": step.rejected,
+            "latency_ms": round(step.latency_ms),
+            "decider_called": step.decider_called,
+            "evidence_sufficient": sufficiency[-1] if sufficiency else None,
+        })
+
+    episode = seeker.run(state, _Backend(), on_step=report_step)
 
     for i, step in enumerate(episode.steps):
         state.decisions.append(
@@ -184,7 +221,9 @@ def run(
     trace = build_trace(
         state,
         answer=answer.text,
-        bedrock_model=bedrock_model,
+        # The model that answered, not the one requested -- they differ when Bedrock
+        # had no capacity for the first choice and the client fell back.
+        bedrock_model=answer.model_id,
         bedrock_usage={
             "input_tokens": answer.input_tokens,
             "output_tokens": answer.output_tokens,
@@ -197,6 +236,8 @@ def run(
     )
     trace["stop_reason"] = episode.stop_reason
     trace["policy_overrides"] = len(episode.overrides)
+    trace["bedrock_fell_back_from"] = answer.fell_back_from
+    emit({"type": "answer", "answer": answer.text, "outcome": outcome, "trace": trace})
     return AgentResult(
         state=state, answer=answer.text, outcome=outcome, trace=trace, cost=cost, bedrock=answer
     )

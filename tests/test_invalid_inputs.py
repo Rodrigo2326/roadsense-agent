@@ -125,3 +125,70 @@ def test_malformed_decider_http_response_is_raised_not_silently_defaulted(monkey
 def test_unreachable_decider_reports_the_endpoint(monkeypatch):
     with pytest.raises(DeciderUnavailable, match="could not reach"):
         HttpDecider("http://127.0.0.1:9", timeout=1).decide("s", {"answer": "d", "detect_objects": "d"})
+
+
+class FlakyBedrock:
+    """Fails with the given error for the first ``fail_for`` model ids it is asked."""
+
+    def __init__(self, unavailable: set[str], error_name: str = "ServiceUnavailableException"):
+        self.unavailable = unavailable
+        self.error_name = error_name
+        self.asked: list[str] = []
+
+    def converse(self, **kwargs):
+        model = kwargs["modelId"]
+        self.asked.append(model)
+        if model in self.unavailable:
+            raise type(self.error_name, (Exception,), {})(f"{model} has no capacity")
+        return {
+            "output": {"message": {"content": [{"text": f"answered by {model}"}]}},
+            "usage": {"inputTokens": 10, "outputTokens": 5},
+        }
+
+
+def test_an_unavailable_model_falls_back_and_the_trace_says_so(image):
+    """A Bedrock capacity outage must not lose the run -- but must be visible."""
+    from roadsense.bedrock_client import DEFAULT_MODEL_ID, FALLBACK_MODEL_IDS
+
+    bedrock = FlakyBedrock(unavailable={DEFAULT_MODEL_ID})
+    result = _run(ScriptedDecider(["detect_objects", "answer"]), image, bedrock=bedrock)
+
+    assert result.outcome == "answered"
+    assert bedrock.asked == [DEFAULT_MODEL_ID, FALLBACK_MODEL_IDS[0]]
+    assert result.bedrock.model_id == FALLBACK_MODEL_IDS[0]
+    assert result.bedrock.fell_back_from == DEFAULT_MODEL_ID
+    assert result.trace["bedrock_model"] == FALLBACK_MODEL_IDS[0]
+    assert result.trace["bedrock_fell_back_from"] == DEFAULT_MODEL_ID
+
+
+def test_a_real_error_is_not_papered_over_by_switching_models(image):
+    """Only capacity errors earn a retry. A bad request is a bug, not bad luck."""
+    from roadsense.bedrock_client import DEFAULT_MODEL_ID
+
+    bedrock = FlakyBedrock(unavailable={DEFAULT_MODEL_ID}, error_name="ValidationException")
+    result = _run(ScriptedDecider(["answer"]), image, bedrock=bedrock)
+
+    assert bedrock.asked == [DEFAULT_MODEL_ID], "a validation error must not try other models"
+    assert result.outcome == OUTCOME_ERROR
+    assert "ValidationException" in result.bedrock.error
+
+
+def test_when_every_model_is_down_the_trace_still_survives(image):
+    from roadsense.bedrock_client import DEFAULT_MODEL_ID, FALLBACK_MODEL_IDS
+
+    bedrock = FlakyBedrock(unavailable={DEFAULT_MODEL_ID, *FALLBACK_MODEL_IDS})
+    result = _run(ScriptedDecider(["detect_objects", "answer"]), image, bedrock=bedrock)
+
+    assert result.outcome == OUTCOME_ERROR
+    assert len(bedrock.asked) == 1 + len(FALLBACK_MODEL_IDS)
+    assert len(result.trace["steps"]) == 2
+    json.dumps(result.trace)
+
+
+def test_the_normal_path_asks_exactly_one_model(image):
+    from roadsense.bedrock_client import DEFAULT_MODEL_ID
+
+    bedrock = FlakyBedrock(unavailable=set())
+    result = _run(ScriptedDecider(["answer"]), image, bedrock=bedrock)
+    assert bedrock.asked == [DEFAULT_MODEL_ID]
+    assert result.bedrock.fell_back_from is None

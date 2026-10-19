@@ -20,6 +20,21 @@ from .state import AgentState
 
 DEFAULT_MODEL_ID = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 
+#: Tried in order when the configured model is unavailable. Bedrock returns
+#: ``ServiceUnavailableException`` when an inference profile has no capacity, which is
+#: a property of the moment rather than of the request -- it hit this project once,
+#: from two machines at once, while other models answered normally. A live demo should
+#: survive that. Which model actually answered is recorded in the trace, so a run that
+#: fell back is never mistaken for one that did not.
+FALLBACK_MODEL_IDS = (
+    "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "amazon.nova-lite-v1:0",
+)
+
+#: Errors worth trying another model for. Anything else (bad request, no access) is
+#: a real failure and is reported as one rather than hidden behind a retry.
+TRANSIENT_ERRORS = ("ServiceUnavailableException", "ThrottlingException", "ModelNotReadyException")
+
 SYSTEM = (
     "You write the final answer for RoadSense, an agent that inspects road-scene "
     "photographs with vision tools.\n"
@@ -45,7 +60,9 @@ class BedrockAnswer:
     output_tokens: int
     latency_ms: float
     model_id: str
+    """The model that actually answered, which is not always the one asked for."""
     error: str | None = None
+    fell_back_from: str | None = None
 
 
 def render_evidence(state: AgentState) -> str:
@@ -75,35 +92,46 @@ def render_evidence(state: AgentState) -> str:
 
 
 def write_answer(
-    client: Any, state: AgentState, model_id: str = DEFAULT_MODEL_ID
+    client: Any,
+    state: AgentState,
+    model_id: str = DEFAULT_MODEL_ID,
+    fallbacks: tuple[str, ...] = FALLBACK_MODEL_IDS,
 ) -> BedrockAnswer:
     prompt = render_evidence(state)
     t0 = time.perf_counter()
-    try:
-        resp = client.converse(
-            modelId=model_id,
-            system=[{"text": SYSTEM}],
-            messages=[{"role": "user", "content": [{"text": prompt}]}],
-            inferenceConfig={"maxTokens": 400, "temperature": 0.0},
-        )
-    except Exception as exc:  # noqa: BLE001 - a Bedrock outage must not lose the trace
+    last_error = ""
+    requested = model_id
+
+    for attempt, candidate in enumerate((model_id, *fallbacks)):
+        try:
+            resp = client.converse(
+                modelId=candidate,
+                system=[{"text": SYSTEM}],
+                messages=[{"role": "user", "content": [{"text": prompt}]}],
+                inferenceConfig={"maxTokens": 400, "temperature": 0.0},
+            )
+        except Exception as exc:  # noqa: BLE001 - an outage must not lose the trace
+            last_error = f"{type(exc).__name__}: {exc}"
+            if type(exc).__name__ in TRANSIENT_ERRORS:
+                continue  # the model is unavailable right now; try the next one
+            break  # a real error -- do not paper over it by switching models
+
+        usage = resp.get("usage", {})
+        blocks = resp["output"]["message"]["content"]
         return BedrockAnswer(
-            text="",
-            input_tokens=0,
-            output_tokens=0,
+            text="".join(b.get("text", "") for b in blocks).strip(),
+            input_tokens=int(usage.get("inputTokens", 0)),
+            output_tokens=int(usage.get("outputTokens", 0)),
             latency_ms=(time.perf_counter() - t0) * 1000,
-            model_id=model_id,
-            error=f"{type(exc).__name__}: {exc}",
+            model_id=candidate,
+            fell_back_from=requested if attempt > 0 else None,
         )
 
-    dt = (time.perf_counter() - t0) * 1000
-    usage = resp.get("usage", {})
-    blocks = resp["output"]["message"]["content"]
-    text = "".join(b.get("text", "") for b in blocks).strip()
     return BedrockAnswer(
-        text=text,
-        input_tokens=int(usage.get("inputTokens", 0)),
-        output_tokens=int(usage.get("outputTokens", 0)),
-        latency_ms=dt,
-        model_id=model_id,
+        text="",
+        input_tokens=0,
+        output_tokens=0,
+        latency_ms=(time.perf_counter() - t0) * 1000,
+        model_id=requested,
+        error=last_error,
     )
