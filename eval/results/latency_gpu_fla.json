@@ -1,0 +1,98 @@
+{
+  "env": {
+    "checkpoint": "StrandsAgents/strands-decider-2B-qwen3.5-v1-2610",
+    "device": "cuda",
+    "platform": "Linux-6.8.0-1066-aws-x86_64-with-glibc2.35",
+    "processor": "x86_64",
+    "cpu_count": 4,
+    "torch": "2.14.1+cu130"
+  },
+  "load_ms": 196507.4,
+  "torso_dtype": "torch.bfloat16",
+  "results": [
+    {
+      "threads": 4,
+      "state": "short",
+      "state_chars": 73,
+      "questions": "1 question",
+      "median_ms": 76.6,
+      "all_ms": [
+        77.5,
+        76.9,
+        76.6,
+        76.5,
+        76.1
+      ]
+    },
+    {
+      "threads": 4,
+      "state": "short",
+      "state_chars": 73,
+      "questions": "2 questions",
+      "median_ms": 160.5,
+      "all_ms": [
+        162.1,
+        160.7,
+        160.5,
+        160.0,
+        160.3
+      ]
+    },
+    {
+      "threads": 4,
+      "state": "medium",
+      "state_chars": 303,
+      "questions": "1 question",
+      "median_ms": 77.5,
+      "all_ms": [
+        77.6,
+        77.5,
+        77.5,
+        77.5,
+        77.6
+      ]
+    },
+    {
+      "threads": 4,
+      "state": "medium",
+      "state_chars": 303,
+      "questions": "2 questions",
+      "median_ms": 161.1,
+      "all_ms": [
+        160.7,
+        161.1,
+        160.6,
+        162.3,
+        161.4
+      ]
+    },
+    {
+      "threads": 4,
+      "state": "long",
+      "state_chars": 1267,
+      "questions": "1 question",
+      "median_ms": 85.7,
+      "all_ms": [
+        85.8,
+        85.7,
+        85.7,
+        85.6,
+        85.6
+      ]
+    },
+    {
+      "threads": 4,
+      "state": "long",
+      "state_chars": 1267,
+      "questions": "2 questions",
+      "median_ms": 163.3,
+      "all_ms": [
+        162.6,
+        163.8,
+        163.3,
+        163.4,
+        163.0
+      ]
+    }
+  ]
+}

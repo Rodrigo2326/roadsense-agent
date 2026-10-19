@@ -1,0 +1,17 @@
+{
+  "_comment": [
+    "Copia a pricing.json para habilitar la estimacion de coste de Bedrock.",
+    "Sin este archivo, RoadSense reporta los tokens exactos y deja el coste en null.",
+    "No se incluye una tarifa de Bedrock por defecto porque no pudo verificarse:",
+    "la AWS Pricing API no publica tarifa para claude-haiku-4-5 y la pagina publica",
+    "de precios de Bedrock no la lista. Consulta tu propia factura o la consola.",
+    "Rekognition SI tiene default verificado via Pricing API: 0.001 USD por imagen."
+  ],
+  "rekognition_usd_per_image": 0.001,
+  "bedrock_usd_per_1k_tokens": {
+    "us.anthropic.claude-haiku-4-5-20251001-v1:0": {
+      "input": null,
+      "output": null
+    }
+  }
+}
