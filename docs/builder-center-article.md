@@ -215,6 +215,36 @@ Four selectors, same loop, same tools, same writer. Only the thing choosing chan
 | Per decision | ~0 ms | ~0 ms | 822 ms | **94 ms** |
 | Billable selector tokens | 0 | 0 | 23 311 | **0** |
 
+### "But would a better model just win?"
+
+Fair question, and comparing a 2B pointer model against only the cheapest frontier
+option would be rigging the baseline. So I ran the LLM arm across a price tier — same
+cases, same loop, same prompt:
+
+| | Haiku 4.5 | Sonnet 4.5 | Opus 4.5 | **Decider 2B** |
+|---|---|---|---|---|
+| Tool set exactly right | 89.2 % | 81.1 % | 89.2 % | 75.7 % |
+| Unparseable replies | 0 | **7** | 0 | – |
+| Selector latency median | 1 883 ms | 4 280 ms | 3 453 ms | **230 ms** |
+| Billable selector tokens | 23 353 | 24 244 | 23 353 | **0** |
+
+**Scale buys nothing here.** Opus 4.5 ties Haiku 4.5 to the decimal and takes twice
+as long to do it. Sonnet lands below both. Whatever separates 89.2 % from Decider's
+75.7 % is not a capability gap you can spend your way out of — three tiers of frontier
+model plateau on the same number.
+
+So the real terms of the trade: Decider gives up 13.5 points of tool-set accuracy
+against the best selector available, and runs **15× faster than Opus 4.5 with zero
+billable tokens**.
+
+And look at Sonnet's row. Seven of its replies could not be parsed — not by the
+documented JSON path, and not by the deliberately generous fallback that just scans
+the text for any action name. Haiku and Opus produced none, so this is not a
+model-quality statement; it is a reminder of what the architecture buys. A generative
+selector can drift off format, and the agent then has to guess what it meant. A
+pointer model cannot. "The selector emitted something unusable" is not a failure mode
+that exists for Decider 2B, and here it cost Sonnet eight points.
+
 **A ten-line if-statement beats a 2-billion-parameter model on the headline metric.**
 Part of that is the metric: `expected_tools` is derived from the question's wording,
 which is exactly what a keyword rule reads, so the baseline starts ahead. Part is real
@@ -226,10 +256,11 @@ a missing file, a zero-byte file, and no image at all, it answers anyway. Decide
 a state that says the image is unusable and asks for better evidence. That is the
 difference between a router and a decision over evidence.
 
-Against the LLM selector doing the identical job in the identical loop, Decider is
-**8.2× faster and consumes no billable tokens at all** — the hybrid argument for small
-decision models, measured instead of asserted. The LLM still picks tools more
-accurately. Speed and cost are where Decider wins here; accuracy is not.
+Against the LLM selectors doing the identical job in the identical loop, Decider is
+**8× faster than Haiku and 15× faster than Opus, consuming no billable tokens at
+all** — the hybrid argument for small decision models, measured instead of asserted.
+The frontier models still pick tools more accurately. Speed, cost and format safety
+are where Decider wins here; raw accuracy is not.
 
 ## What didn't work
 

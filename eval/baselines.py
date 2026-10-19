@@ -12,7 +12,11 @@ Four arms:
 ``exhaustive``  run every tool that is still legal, then answer. Never misses
                 evidence; pays for everything, every time.
 ``llm``         ask Bedrock to pick the next action from the same menu. A generative
-                model doing the job the pointer model was built for.
+                model doing the job the pointer model was built for. Write it as
+                ``llm:<model-id>`` to pin a specific one -- running the arm across a
+                price tier is the only way to answer "would a better model just win?",
+                and comparing a 2B pointer model against only the cheapest frontier
+                option would be rigging the baseline.
 ``decider``     Strands Decider 2B (``roadsense.decider_client``).
 """
 
@@ -168,10 +172,12 @@ def build(name: str, *, bedrock: Any = None, model_id: str = "", **decider_kw) -
         return KeywordDecider()
     if name == "exhaustive":
         return ExhaustiveDecider()
-    if name == "llm":
+    if name == "llm" or name.startswith("llm:"):
         if bedrock is None:
             raise ValueError("the llm arm needs a bedrock client")
-        return LlmDecider(bedrock, model_id)
+        # "llm:<model-id>" pins the selector model independently of the writer's.
+        selector_model = name.split(":", 1)[1] if ":" in name else model_id
+        return LlmDecider(bedrock, selector_model)
     if name == "decider":
         from roadsense.decider_client import HttpDecider, InProcessDecider
 

@@ -87,6 +87,7 @@ def run_arm(
     summary = metrics.aggregate(scores)
     if isinstance(selector, baselines.LlmDecider):
         summary["llm_parse_failures"] = selector.parse_failures
+        summary["selector_model"] = selector.model_id
     return {"arm": arm, "summary": summary, "scores": scores, "traces": traces}
 
 
@@ -108,8 +109,20 @@ HEADLINE = [
 ]
 
 
+def _short(arm: str) -> str:
+    """A column heading that fits: llm:us.anthropic.claude-opus-4-5-... -> llm/opus-4.5"""
+    if not arm.startswith("llm:"):
+        return arm
+    model = arm.split(":", 1)[1]
+    for tag in ("opus-4-5", "opus-4-6", "sonnet-4-5", "sonnet-4-6", "haiku-4-5",
+                "nova-pro", "nova-lite", "nova-micro"):
+        if tag in model:
+            return "llm/" + tag.replace("-4-5", "-4.5").replace("-4-6", "-4.6")
+    return "llm/" + model.split(".")[-1][:14]
+
+
 def render_report(results: list[dict[str, Any]], cases: int, meta: dict[str, Any]) -> str:
-    arms = [r["arm"] for r in results]
+    arms = [_short(r["arm"]) for r in results]
     out = [
         "# RoadSense benchmark results",
         "",
@@ -179,7 +192,7 @@ def render_report(results: list[dict[str, Any]], cases: int, meta: dict[str, Any
             losses.append(f"{s['llm_parse_failures']} unparseable selector replies")
         if s.get("error_pct"):
             losses.append(f"{s['error_pct']}% of cases errored")
-        out.append(f"- **{r['arm']}**: " + ("; ".join(losses) if losses else "nothing on these metrics."))
+        out.append(f"- **{_short(r['arm'])}**: " + ("; ".join(losses) if losses else "nothing on these metrics."))
 
     out += ["", "## By difficulty", "",
             "| Arm | " + " | ".join(["easy", "medium", "hard", "invalid-input"]) + " |",
@@ -190,7 +203,7 @@ def render_report(results: list[dict[str, Any]], cases: int, meta: dict[str, Any
             rows = [x for x in r["scores"] if x["difficulty"] == diff]
             ok = sum(x["behavior_correct"] and x["tool_set_exact"] for x in rows)
             cells.append(f"{ok}/{len(rows)}" if rows else "-")
-        out.append(f"| {r['arm']} | " + " | ".join(cells) + " |")
+        out.append(f"| {_short(r['arm'])} | " + " | ".join(cells) + " |")
     out.append("")
     out.append("Cell shows cases where the tool set *and* the behaviour were both right.")
     out.append("")

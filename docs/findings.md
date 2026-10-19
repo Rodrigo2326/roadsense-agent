@@ -227,13 +227,59 @@ The honest caveat stays attached: the LLM arm still picks tools better (89.2 % v
 75.7 %) and handles the insufficient cases perfectly (100 % vs 94.4 %). Speed and
 cost are where Decider wins; accuracy on this benchmark is not.
 
+## 5c. Would a better model just win? We bought three and asked.
+
+Comparing a 2B pointer model against only the cheapest frontier option would be
+rigging the baseline, so the `llm` arm was re-run across a price tier: Claude
+Haiku 4.5, Sonnet 4.5 and Opus 4.5, same 37 cases, same loop, same prompt. (Opus 5,
+Fable 5 and Sonnet 5 return `AccessDeniedException` on this account and could not be
+included.)
+
+| | keyword | haiku 4.5 | sonnet 4.5 | opus 4.5 | **Decider 2B** |
+|---|---|---|---|---|---|
+| Tool set exactly right | **100 %** | 89.2 % | 81.1 % | 89.2 % | 75.7 % |
+| Behaviour correct | 89.2 % | **100 %** | 97.3 % | 97.3 % | 97.3 % |
+| Unnecessary calls | **0** | 4 | 7 | 4 | 9 |
+| Unparseable replies | – | 0 | **7** | 0 | – |
+| Selector latency median | ~0 ms | 1 883 ms | 4 280 ms | 3 453 ms | **230 ms** |
+| Billable selector tokens | 0 | 23 353 | 24 244 | 23 353 | **0** |
+
+**Scale buys nothing here.** Opus 4.5 ties Haiku 4.5 to the decimal — 89.2 % both —
+and costs twice the latency to get there. Sonnet 4.5 lands *below* both. Whatever
+separates 89.2 % from Decider's 75.7 % is not a capability gap you can spend your way
+out of: three tiers of frontier model plateau at the same number.
+
+That reframes the headline loss. Decider gives up 13.5 points of tool-set accuracy
+against the best available selector — and in exchange runs **15× faster than Opus**
+with **zero billable tokens**. Those are the real terms of the trade, and they are
+better terms than the single-baseline comparison suggested.
+
+### The seven replies nobody could read
+
+Sonnet 4.5's 81.1 % has a specific cause: **seven of its selector replies could not be
+parsed.** Haiku and Opus produced none.
+
+The parser is deliberately generous — it looks for the documented JSON, and failing
+that scans the text for any action name, because the point is to compare selection
+quality rather than to score models on JSON discipline. Seven replies defeated both.
+
+This is the architectural argument made concrete. A generative model asked to pick
+from a menu can drift off format, and when it does the agent has to guess what it
+meant. A pointer model cannot: it scores a fixed list and returns a distribution.
+"The selector emitted something unusable" is not a failure mode that exists for
+Decider 2B — not because the handling is better, but because there is no slot for it.
+It cost Sonnet eight points of accuracy on a task where the model itself is perfectly
+capable.
+
 ## 6. What we would do next
 
 - **Fix the over-calling directly.** The state already says which tools have run; it
   does not say which ones the *question* needs. Adding that to the rendering is the
   obvious next experiment, and it is measurable with the harness as it stands.
-- **Try the larger checkpoints.** Only `2B-qwen3.5-v1-2610` was tested. Six others
-  exist, including gemma4 variants up to 26B.
+- **Try the larger Decider checkpoints.** Only `2B-qwen3.5-v1-2610` was tested. Six
+  others exist, including gemma4 variants up to 26B. The frontier-LLM sweep showed
+  scale does not help a *generative* selector here; whether it helps a *pointer* model
+  is a different question and an open one.
 - **Finish the kernel story.** `causal-conv1d` never finished building. Its fallback
   warning is still printed on every GPU load, so there is measurable headroom below
   77 ms that we have not claimed.
@@ -247,5 +293,5 @@ cost are where Decider wins; accuracy on this benchmark is not.
 |---|---|---|
 | `keyword` | tool accuracy, latency, cost | blind to state; answers with no image |
 | `exhaustive` | never misses evidence | 20 unnecessary calls; worst tool accuracy |
-| `llm` | best behaviour overall; 5/5 on invalid input | 23k billable selector tokens |
+| `llm` | best behaviour overall; 5/5 on invalid input; best tool accuracy of any model | 23k billable selector tokens; 7 unparseable replies at the Sonnet tier; scaling to Opus buys nothing |
 | `decider` | fastest selector on GPU (94 ms/decision, 8.2x the LLM arm); 5/5 on invalid input; zero billable tokens | 9 unnecessary calls; needs a GPU to be fast |
