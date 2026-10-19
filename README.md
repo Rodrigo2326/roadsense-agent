@@ -65,6 +65,28 @@ No image was provided to RoadSense, so no vehicles can be identified.
 
 ---
 
+## Two demos, and why there are two
+
+**The replay page** (`demo/replay.html`, built by `scripts/make_replay.py`) is the one
+to share. It replays five episodes that actually ran — every probability, confidence
+and latency read off a real response on an A10G — with no backend at all. Including
+the case the agent gets wrong.
+
+**The live server** (`python -m roadsense.web.server`) runs the agent on your own
+photograph. It is deliberately *not* hosted publicly, because every click spends real
+money: two Rekognition calls, a Bedrock completion, and a GPU instance billed by the
+hour. If you do expose it, it has limits:
+
+```bash
+python -m roadsense.web.server --public           # 200 runs/day, 10/ip/hour, samples only
+python -m roadsense.web.server --token "$SECRET"  # and/or a shared secret
+```
+
+`--public` is a shorthand; `--max-runs-per-day`, `--max-runs-per-ip-hour`,
+`--samples-only` and `--token` are individually settable. Uploads over 5 MB are always
+refused, because Rekognition would refuse them anyway. None of this is authentication
+— put a real front door in front of it if it faces the internet.
+
 ## Setup
 
 Decider 2B is **not a Bedrock model**. It is a LoRA adapter (202 MB) plus a pointer

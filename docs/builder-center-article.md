@@ -298,6 +298,15 @@ trace records which model actually answered.
 
 ## Try it
 
+There is a **replay page** that walks through five real episodes step by step,
+including the one the agent gets wrong — no backend, nothing staged, every number read
+off a real response. The live server is not hosted publicly on purpose: each run costs
+two Rekognition calls, a Bedrock completion and GPU time, and a public URL for that is
+a bill rather than a demo. It ships with run caps, a samples-only mode and a shared
+token for anyone who does want to expose it.
+
+To run it yourself:
+
 ```bash
 pip install -e ".[dev,decider]"
 python scripts/smoke_decider.py                 # 3 real decisions

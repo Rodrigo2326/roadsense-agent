@@ -31,12 +31,13 @@ import time
 from typing import Any
 
 import boto3
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
 from ..agent import run as run_agent
 from ..bedrock_client import DEFAULT_MODEL_ID
 from ..decider_client import InProcessDecider
+from .guards import Budget, Denied, Limits
 
 HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -66,6 +67,10 @@ app = FastAPI(title="RoadSense")
 
 _state: dict[str, Any] = {"decider": None, "rekognition": None, "bedrock": None, "ready": False}
 _lock = threading.Lock()
+
+#: Replaced by main() when limits are requested. Unlimited by default, which is the
+#: right behaviour on a laptop and the wrong one on a public URL.
+BUDGET = Budget(Limits())
 
 
 def warm_up() -> None:
@@ -109,6 +114,7 @@ def status() -> dict[str, Any]:
         "checkpoint": CHECKPOINT,
         "bedrock_model": MODEL_ID,
         "load_seconds": _state.get("load_seconds"),
+        **BUDGET.snapshot(),
         "samples": [
             {"name": n, "caption": c}
             for n, c in SAMPLE_CAPTIONS.items()
@@ -142,19 +148,50 @@ def _resolve_image(sample_name: str | None, upload: UploadFile | None) -> tuple[
     return None, None
 
 
+def _refuse(message: str) -> StreamingResponse:
+    """Refusals travel down the same stream the UI already reads."""
+    return StreamingResponse(
+        iter([json.dumps({"type": "error", "message": message}) + "\n"]),
+        media_type="application/x-ndjson",
+    )
+
+
+def _client_of(request: Request) -> str:
+    # Behind a proxy the socket address is the proxy. Trust the first hop only when a
+    # proxy is actually in front; otherwise this header is caller-controlled.
+    if os.environ.get("ROADSENSE_TRUST_FORWARDED"):
+        forwarded = request.headers.get("x-forwarded-for", "")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 @app.post("/api/run")
 async def api_run(
+    request: Request,
     question: str = Form(...),
     sample: str | None = Form(None),
     max_steps: int = Form(4),
     ask_sufficiency: bool = Form(True),
+    token: str = Form(""),
     image: UploadFile | None = File(None),
 ):
     if not _state["ready"]:
-        return StreamingResponse(
-            iter([json.dumps({"type": "error", "message": "model is still loading"}) + "\n"]),
-            media_type="application/x-ndjson",
-        )
+        return _refuse("The model is still loading. Give it a moment.")
+
+    try:
+        BUDGET.check_token(token or request.headers.get("x-roadsense-token", ""))
+        size = 0
+        if image is not None and image.filename:
+            size = len(await image.read())
+            await image.seek(0)
+        BUDGET.check_upload(size, is_sample=bool(sample))
+        BUDGET.reserve(_client_of(request))
+    except Denied as exc:
+        return _refuse(str(exc))
+
+    # A step budget is a cost ceiling too: each step is a model call and a tool call.
+    max_steps = max(1, min(int(max_steps), 6))
 
     image_path, temp_path = _resolve_image(sample, image)
     events: queue.Queue = queue.Queue()
@@ -205,7 +242,31 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8080)
+    ap.add_argument("--max-runs-per-day", type=int, default=0,
+                    help="hard cap on runs per UTC day; 0 means unlimited")
+    ap.add_argument("--max-runs-per-ip-hour", type=int, default=0,
+                    help="per-client cap in a rolling hour; 0 means unlimited")
+    ap.add_argument("--samples-only", action="store_true",
+                    help="refuse uploads and run only the bundled images")
+    ap.add_argument("--token", default=os.environ.get("ROADSENSE_TOKEN", ""),
+                    help="shared secret every run must present")
+    ap.add_argument("--public", action="store_true",
+                    help="shorthand for a sane set of limits: 200/day, 10/ip/hour, samples only")
     args = ap.parse_args()
+
+    limits = Limits(
+        max_runs_per_day=args.max_runs_per_day or (200 if args.public else 0),
+        max_runs_per_ip_hour=args.max_runs_per_ip_hour or (10 if args.public else 0),
+        samples_only=args.samples_only or args.public,
+        token=args.token,
+    )
+    global BUDGET
+    BUDGET = Budget(limits)
+    if limits.enabled:
+        print(f"[roadsense] limits: {limits}", flush=True)
+    elif args.host != "127.0.0.1":
+        print("[roadsense] WARNING: bound to a public interface with no limits. "
+              "Use --public, or keep the security group narrow.", flush=True)
 
     import uvicorn
 
