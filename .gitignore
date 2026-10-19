@@ -9,3 +9,7 @@ venv/
 *.egg-info/
 pricing.json
 .DS_Store
+
+# el sitio publico es un build; se regenera con scripts/make_replay.py
+site/
+.wrangler/

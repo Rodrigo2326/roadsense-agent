@@ -32,6 +32,7 @@ from typing import Any
 
 import boto3
 from fastapi import FastAPI, File, Form, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 
 from ..agent import run as run_agent
@@ -64,6 +65,19 @@ SAMPLE_CAPTIONS = {
 }
 
 app = FastAPI(title="RoadSense")
+
+# The public page is static and may be served from anywhere (Cloudflare Pages, a file
+# URL, localhost). It calls this server cross-origin, so the browser needs permission.
+# Set ROADSENSE_ALLOW_ORIGINS to a comma-separated list to narrow it; "*" is the
+# default because the spending limits, not the origin header, are what protect this.
+_origins = [o.strip() for o in os.environ.get("ROADSENSE_ALLOW_ORIGINS", "*").split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 _state: dict[str, Any] = {"decider": None, "rekognition": None, "bedrock": None, "ready": False}
 _lock = threading.Lock()

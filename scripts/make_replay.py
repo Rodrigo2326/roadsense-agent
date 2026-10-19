@@ -1,17 +1,23 @@
-"""Build the public demo: real traces, replayed, with no backend.
+"""Build the public demo: real traces replayed, and a live mode when one is available.
 
 The live server is the honest demo, and it is also a URL that spends money every time
 someone clicks it — two Rekognition calls, a Bedrock completion, and a GPU instance
 billed by the hour. Leaving that open to the internet for a week is a bill, not a
 demo.
 
-So the public page replays episodes that actually happened. Every probability, every
-confidence and every latency below was produced by a run of `eval/run_benchmark.py`
-against the real model on an A10G; nothing here is staged, and the page says so. What
-it cannot do is run your photograph — for that you clone the repo, which is where a
-demo like this belongs anyway.
+So the page ships with episodes that actually happened. Every probability, every
+confidence and every latency was produced by a run of `eval/run_benchmark.py` against
+the real model on an A10G; nothing is staged, and the page says so.
 
-    python scripts/make_replay.py
+It also looks for a live backend. Point it at one with `--api`, or at run time with
+`?api=https://host`, and the page probes `/api/status`: if a server answers, the
+upload panel turns itself on and real runs stream in beside the recordings. If
+nothing answers — which is the normal state, because that server costs money per
+click — the panel explains why and the recordings still work.
+
+One page, hosted as static files anywhere, honest in both states.
+
+    python scripts/make_replay.py --api https://roadsense.example.com
 """
 
 from __future__ import annotations
@@ -189,6 +195,27 @@ h1 em{font-style:italic;color:var(--chosen)}
  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;cursor:pointer}
 .pace button[aria-pressed="true"]{background:var(--chosen-soft);color:var(--chosen);font-weight:500}
 
+.live{border:1px solid var(--rule);border-radius:6px;background:var(--surface);padding:17px 19px;
+ margin-bottom:22px;box-shadow:var(--shadow)}
+.live.off{background:transparent;border-style:dashed;box-shadow:none}
+.lh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:11px}
+.lt{font-weight:600;font-size:15px}
+.status{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11px;padding:4px 10px;
+ border-radius:999px;border:1px solid var(--rule);color:var(--muted);margin-left:auto}
+.status.on{border-color:var(--good);color:var(--good);background:var(--good-soft)}
+.status.off{border-color:var(--rule);color:var(--faint)}
+.lnote{font-size:13.5px;color:var(--muted);margin:0;max-width:74ch;line-height:1.5}
+.lform{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin-top:13px}
+@media(max-width:700px){.lform{grid-template-columns:1fr}}
+.drop{display:block;border:1.5px dashed var(--rule);border-radius:4px;padding:15px;text-align:center;
+ cursor:pointer;color:var(--muted);font-size:13.5px;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--chosen);background:var(--chosen-soft)}
+.drop input{display:none}
+.lq{width:100%;border:1px solid var(--rule);border-radius:4px;padding:9px 11px;font-family:inherit;
+ font-size:14px;background:var(--ground);color:var(--ink);margin-top:9px}
+.lq:focus{outline:2px solid var(--chosen);outline-offset:-1px}
+.thumb{max-height:64px;border-radius:3px;border:1px solid var(--rule);margin-top:9px;display:none}
+
 .stage{min-height:300px}
 .hint{border:1.5px dashed var(--rule);border-radius:6px;padding:52px 26px;text-align:center;color:var(--faint)}
 .hint p{margin:0 0 7px;font-family:"Instrument Serif",Georgia,serif;font-size:21px;color:var(--muted)}
@@ -266,6 +293,24 @@ footer a{color:var(--muted)}
     <div><b>the answer</b><span>Bedrock writes it, and never sees the photo &mdash; only what the tools found.</span></div>
   </div>
 
+  <div class="live off" id="live">
+    <div class="lh"><span class="lt">Run it on your own photo</span>
+      <span class="status off" id="lstat">checking…</span></div>
+    <p class="lnote" id="lnote"></p>
+    <div id="lform" hidden>
+      <div class="lform">
+        <div>
+          <label class="drop" id="drop"><input type="file" id="file" accept="image/jpeg,image/png">
+            Drop a road photo here, or click to choose</label>
+          <input class="lq" id="lq" value="What vehicles appear and what text can be read on the sign?">
+          <img class="thumb" id="thumb" alt="">
+        </div>
+        <button class="play" id="lrun">Run it</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="eyebrow" style="margin-bottom:12px">or replay a recorded run</p>
   <div class="scenes" id="scenes"></div>
 
   <div class="bar">
@@ -392,6 +437,119 @@ async function play() {
 }
 playBtn.onclick = play;
 
+// --- live mode -------------------------------------------------------------
+// The page is static and works alone. If a backend happens to be reachable it turns
+// the upload panel on; otherwise it says why, and the recordings carry the page.
+const API = new URLSearchParams(location.search).get("api") || __API__;
+let liveReady = false;
+
+function liveOff(note) {
+  $("#live").className = "live off";
+  $("#lstat").className = "status off";
+  $("#lstat").textContent = "live mode off";
+  $("#lnote").innerHTML = note;
+  $("#lform").hidden = true;
+}
+
+async function probeLive() {
+  if (!API) {
+    liveOff("No live server is configured for this page. Everything below is a recording of a " +
+            "real episode \u2014 clone the repo to run the agent on your own photographs.");
+    return;
+  }
+  try {
+    const r = await fetch(API.replace(/\/$/, "") + "/api/status", {mode: "cors"});
+    const s = await r.json();
+    if (!s.ready) { liveOff("The model is still loading on the server. Try again in a minute."); return; }
+    liveReady = true;
+    $("#live").className = "live";
+    $("#lstat").className = "status on";
+    $("#lstat").textContent = "live \u00b7 " + s.device;
+    const left = s.runs_remaining_today;
+    $("#lnote").innerHTML =
+      "A server is answering, so this runs for real: Strands Decider 2B on a GPU, Amazon " +
+      "Rekognition for the evidence, Amazon Bedrock for the answer." +
+      (left !== null && left !== undefined ? " <b>" + left + " runs left today.</b>" : "") +
+      (s.samples_only ? " This instance only accepts the bundled samples." : "");
+    $("#lform").hidden = false;
+  } catch (e) {
+    liveOff("The live server is switched off right now \u2014 every run costs two Rekognition calls, " +
+            "a Bedrock completion and GPU time, so it is only turned on deliberately. " +
+            "Everything below is a recording of a real run.");
+  }
+}
+probeLive();
+
+const fileInput = $("#file"), thumb = $("#thumb"), drop = $("#drop");
+fileInput.onchange = () => {
+  const f = fileInput.files[0];
+  if (f) { thumb.src = URL.createObjectURL(f); thumb.style.display = "block"; }
+};
+["dragenter","dragover"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", ev => {
+  const f = ev.dataTransfer.files[0];
+  if (f) { fileInput.files = ev.dataTransfer.files; fileInput.onchange(); }
+});
+
+$("#lrun").onclick = async () => {
+  if (!liveReady) return;
+  stop(); playing = true;
+  const btn = $("#lrun"); btn.disabled = true; btn.textContent = "deciding\u2026";
+  stage.innerHTML = "";
+  $("#q").textContent = $("#lq").value;
+  const body = new FormData();
+  body.append("question", $("#lq").value || "What is in this scene?");
+  if (fileInput.files[0]) body.append("image", fileInput.files[0]);
+  try {
+    const res = await fetch(API.replace(/\/$/, "") + "/api/run", {method: "POST", body});
+    const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+    while (true) {
+      const {done, value} = await reader.read(); if (done) break;
+      buf += dec.decode(value, {stream: true});
+      const lines = buf.split("\n"); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const ev = JSON.parse(line);
+        if (ev.type === "decision") {
+          stage.append(stepEl({n: ev.step, action: ev.action, confidence: ev.confidence,
+            sufficient: ev.evidence_sufficient, latency: ev.latency_ms, offered: ev.offered,
+            probs: ev.probabilities, rejected: ev.rejected}));
+        } else if (ev.type === "evidence") {
+          const e = ev.evidence;
+          const box = document.createElement("div");
+          box.className = "ev" + ((!e.ok || e.quality === null) ? " none" : "");
+          const q = e.quality === null ? "no confidence reported" : "tool confidence " + fmt(e.quality,2);
+          box.innerHTML = '<div class="eh"><span>' + e.tool + ' returned</span><span>' + q +
+            '</span><span>' + Math.round(e.duration_ms) + ' ms</span></div><p class="eb"></p>';
+          box.querySelector(".eb").textContent = e.summary;
+          (stage.lastElementChild || stage).append(box);
+        } else if (ev.type === "answer") {
+          const c = ev.trace.cost || {};
+          const out = document.createElement("div"); out.className = "out";
+          out.innerHTML = '<span class="tag' + (ev.outcome === "answered" ? "" : " lim") + '">' +
+            ev.outcome.replace(/_/g, " ") + '</span><p class="ans"></p>' +
+            '<div class="tot"><span>' + ev.elapsed_ms + ' ms end to end</span><span>' +
+            (c.rekognition_calls || 0) + ' vision calls</span>' +
+            '<span>0 billable selector tokens</span></div>';
+          out.querySelector(".ans").textContent = ev.answer || "(no answer returned)";
+          stage.append(out);
+        } else if (ev.type === "error") {
+          const d = document.createElement("div"); d.className = "verdict";
+          d.textContent = ev.message; stage.append(d);
+        }
+      }
+    }
+  } catch (e) {
+    const d = document.createElement("div"); d.className = "verdict";
+    d.textContent = "Could not reach the live server: " + e.message; stage.append(d);
+  } finally {
+    playing = false; btn.disabled = false; btn.textContent = "Run it";
+  }
+};
+
 $("#foot").innerHTML =
   `Replayed from traces produced by <code>eval/run_benchmark.py</code> on an NVIDIA A10G. ` +
   `Probabilities, confidence and latency are read straight from the model's response. ` +
@@ -408,6 +566,8 @@ def main() -> int:
     ap.add_argument("--results", default=str(ROOT / "eval/results/results_gpu.json"))
     ap.add_argument("--out", default=str(ROOT / "demo/replay.html"))
     ap.add_argument("--repo", default="", help="repository URL shown in the footer")
+    ap.add_argument("--api", default="",
+                    help="base URL of a live server; the page enables uploads when it answers")
     args = ap.parse_args()
 
     scenes = collect(pathlib.Path(args.results))
@@ -416,6 +576,7 @@ def main() -> int:
         .replace("__ORDER__", json.dumps(ACTION_ORDER))
         .replace("__LABELS__", json.dumps(ACTION_LABEL))
         .replace("__REPO__", json.dumps(args.repo))
+        .replace("__API__", json.dumps(args.api))
     )
     out = pathlib.Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
