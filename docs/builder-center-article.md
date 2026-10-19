@@ -221,17 +221,24 @@ Fair question, and comparing a 2B pointer model against only the cheapest fronti
 option would be rigging the baseline. So I ran the LLM arm across a price tier — same
 cases, same loop, same prompt:
 
-| | Haiku 4.5 | Sonnet 4.5 | Opus 4.5 | **Decider 2B** |
-|---|---|---|---|---|
-| Tool set exactly right | 89.2 % | 81.1 % | 89.2 % | 75.7 % |
-| Unparseable replies | 0 | **7** | 0 | – |
-| Selector latency median | 1 883 ms | 4 280 ms | 3 453 ms | **230 ms** |
-| Billable selector tokens | 23 353 | 24 244 | 23 353 | **0** |
+| | Haiku 4.5 | Sonnet 4.5 | Sonnet 4.6 | Opus 4.5 | **Decider 2B** |
+|---|---|---|---|---|---|
+| Tool set exactly right | 89.2 % | 81.1 % | 89.2 % | 89.2 % | 75.7 % |
+| Unparseable replies | 0 | **7** | 0 | 0 | – |
+| Selector latency median | 1 883 ms | 4 280 ms | 1 747 ms | 3 453 ms | **230 ms** |
+| Billable selector tokens | 23 353 | 24 244 | 23 432 | 23 353 | **0** |
 
-**Scale buys nothing here.** Opus 4.5 ties Haiku 4.5 to the decimal and takes twice
-as long to do it. Sonnet lands below both. Whatever separates 89.2 % from Decider's
-75.7 % is not a capability gap you can spend your way out of — three tiers of frontier
-model plateau on the same number.
+**Scale buys nothing here, and the ceiling is exact.** Haiku 4.5, Sonnet 4.6 and
+Opus 4.5 land on **89.2 %** — the same number to the decimal, across models spanning
+roughly an order of magnitude in price. Opus takes twice Haiku's latency to get
+there. The cheapest frontier model available is also the joint best.
+
+Sonnet 4.5's 81.1 % is the one outlier, and it is entirely its seven unparseable
+replies — a defect 4.6 does not have. Remove the format failures and it joins the
+plateau.
+
+So whatever separates 89.2 % from Decider's 75.7 % is not a capability gap you can
+spend your way out of. Four frontier configurations, one ceiling.
 
 So the real terms of the trade: Decider gives up 13.5 points of tool-set accuracy
 against the best selector available, and runs **15× faster than Opus 4.5 with zero

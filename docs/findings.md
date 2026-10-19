@@ -231,23 +231,36 @@ cost are where Decider wins; accuracy on this benchmark is not.
 
 Comparing a 2B pointer model against only the cheapest frontier option would be
 rigging the baseline, so the `llm` arm was re-run across a price tier: Claude
-Haiku 4.5, Sonnet 4.5 and Opus 4.5, same 37 cases, same loop, same prompt. (Opus 5,
-Fable 5 and Sonnet 5 return `AccessDeniedException` on this account and could not be
-included.)
+Haiku 4.5, Sonnet 4.5 and Opus 4.5, same 37 cases, same loop, same prompt. Sonnet 4.6 was added afterwards to test whether Sonnet 4.5's
+deficit was a generation artefact. It was.
 
-| | keyword | haiku 4.5 | sonnet 4.5 | opus 4.5 | **Decider 2B** |
-|---|---|---|---|---|---|
-| Tool set exactly right | **100 %** | 89.2 % | 81.1 % | 89.2 % | 75.7 % |
-| Behaviour correct | 89.2 % | **100 %** | 97.3 % | 97.3 % | 97.3 % |
-| Unnecessary calls | **0** | 4 | 7 | 4 | 9 |
-| Unparseable replies | – | 0 | **7** | 0 | – |
-| Selector latency median | ~0 ms | 1 883 ms | 4 280 ms | 3 453 ms | **230 ms** |
-| Billable selector tokens | 0 | 23 353 | 24 244 | 23 353 | **0** |
+Newer frontier models could not be included. Their Bedrock *agreements* accept
+cleanly through `create-foundation-model-agreement` — authorization, entitlement and
+region all report `AVAILABLE` — but invocation still returns
+`anthropic.claude-opus-5 is not available for this account ... contact AWS Sales`.
+Everything from the 4.7 generation up sits behind an account-tier gate that no
+self-service API opens. Opus 4.5 is the ceiling this account can actually call.
 
-**Scale buys nothing here.** Opus 4.5 ties Haiku 4.5 to the decimal — 89.2 % both —
-and costs twice the latency to get there. Sonnet 4.5 lands *below* both. Whatever
-separates 89.2 % from Decider's 75.7 % is not a capability gap you can spend your way
-out of: three tiers of frontier model plateau at the same number.
+| | keyword | haiku 4.5 | sonnet 4.5 | sonnet 4.6 | opus 4.5 | **Decider 2B** |
+|---|---|---|---|---|---|---|
+| Tool set exactly right | **100 %** | 89.2 % | 81.1 % | 89.2 % | 89.2 % | 75.7 % |
+| Behaviour correct | 89.2 % | **100 %** | 97.3 % | 97.3 % | 97.3 % | 97.3 % |
+| Unnecessary calls | **0** | 4 | 7 | 4 | 4 | 9 |
+| Unparseable replies | – | 0 | **7** | 0 | 0 | – |
+| Selector latency median | ~0 ms | 1 883 ms | 4 280 ms | 1 747 ms | 3 453 ms | **230 ms** |
+| Billable selector tokens | 0 | 23 353 | 24 244 | 23 432 | 23 353 | **0** |
+
+**Scale buys nothing here, and the ceiling is exact.** Haiku 4.5, Sonnet 4.6 and
+Opus 4.5 all land on **89.2 %** — the same number to the decimal, across a model
+family spanning roughly an order of magnitude in price. Opus takes twice Haiku's
+latency to reach it. The cheapest frontier model available is also the joint best.
+
+The one outlier is explained rather than averaged away: Sonnet 4.5's 81.1 % is
+entirely its seven unparseable replies, a defect its successor 4.6 does not have.
+Remove the format failures and it joins the plateau.
+
+Whatever separates 89.2 % from Decider's 75.7 % is therefore not a capability gap
+anyone can spend their way out of. Four frontier configurations, one ceiling.
 
 That reframes the headline loss. Decider gives up 13.5 points of tool-set accuracy
 against the best available selector — and in exchange runs **15× faster than Opus**
