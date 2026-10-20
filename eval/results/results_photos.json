@@ -1,0 +1,2231 @@
+{
+  "meta": {
+    "source": "real photographs, Wikimedia Commons",
+    "device": "cuda"
+  },
+  "results": [
+    {
+      "arm": "decider",
+      "summary": {},
+      "scores": [],
+      "traces": [
+        {
+          "schema_version": 1,
+          "timestamp_utc": "2026-10-20T21:39:21.784074+00:00",
+          "question": "What text can be read on the sign?",
+          "image_path": "/home/ubuntu/roadsense/demo/photos/stop-sign.jpg",
+          "max_steps": 4,
+          "outcome": "answered",
+          "answer": "The sign reads 'STOP'. The OCR confidence for this reading is 0.96, indicating high reliability.",
+          "decider_backend": "in-process:StrandsAgents/strands-decider-2B-qwen3.5-v1-2610",
+          "bedrock_model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+          "bedrock_usage": {
+            "input_tokens": 373,
+            "output_tokens": 28,
+            "latency_ms": 855.4
+          },
+          "wall_ms": 1674.7,
+          "steps": [
+            {
+              "step": 1,
+              "action": "read_sign_text",
+              "confidence": 0.8943,
+              "probabilities": {
+                "detect_objects": 0.0692,
+                "read_sign_text": 0.9207,
+                "request_better_evidence": 0.0062,
+                "answer": 0.0039
+              },
+              "evidence_sufficient": 0.2047,
+              "latency_ms": 165.28240499997082,
+              "rejected": null,
+              "decider_called": true,
+              "offered_actions": [
+                "answer",
+                "detect_objects",
+                "read_sign_text",
+                "request_better_evidence"
+              ]
+            },
+            {
+              "step": 2,
+              "action": "answer",
+              "confidence": 0.485,
+              "probabilities": {
+                "detect_objects": 0.3132,
+                "request_better_evidence": 0.0301,
+                "answer": 0.6566
+              },
+              "evidence_sufficient": 0.865,
+              "latency_ms": 159.44087499997295,
+              "rejected": null,
+              "decider_called": true,
+              "offered_actions": [
+                "answer",
+                "detect_objects",
+                "request_better_evidence"
+              ]
+            }
+          ],
+          "evidence": [
+            {
+              "tool": "read_sign_text",
+              "ok": true,
+              "summary": "OCR read the text: 'STOP'.",
+              "items": [
+                {
+                  "text": "STOP",
+                  "confidence": 0.9551,
+                  "line_id": 0,
+                  "box": {
+                    "Width": 0.6367666721343994,
+                    "Height": 0.3416054844856262,
+                    "Left": 0.18809382617473602,
+                    "Top": 0.3103300929069519
+                  }
+                }
+              ],
+              "quality": 0.9551,
+              "error": null,
+              "duration_ms": 493.6060479999469,
+              "raw": {
+                "TextDetections": [
+                  {
+                    "DetectedText": "STOP",
+                    "Type": "LINE",
+                    "Id": 0,
+                    "Confidence": 95.50800323486328,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.6367666721343994,
+                        "Height": 0.3416054844856262,
+                        "Left": 0.18809382617473602,
+                        "Top": 0.3103300929069519
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.18850214779376984,
+                          "Y": 0.3103300929069519
+                        },
+                        {
+                          "X": 0.8248604536056519,
+                          "Y": 0.3116876780986786
+                        },
+                        {
+                          "X": 0.8244522213935852,
+                          "Y": 0.6519355773925781
+                        },
+                        {
+                          "X": 0.18809382617473602,
+                          "Y": 0.6505779027938843
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "STOP",
+                    "Type": "WORD",
+                    "Id": 1,
+                    "ParentId": 0,
+                    "Confidence": 95.50800323486328,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.6367666721343994,
+                        "Height": 0.3416054844856262,
+                        "Left": 0.18809382617473602,
+                        "Top": 0.3103300929069519
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.18850214779376984,
+                          "Y": 0.3103300929069519
+                        },
+                        {
+                          "X": 0.8248604536056519,
+                          "Y": 0.3116876780986786
+                        },
+                        {
+                          "X": 0.8244522213935852,
+                          "Y": 0.6519355773925781
+                        },
+                        {
+                          "X": 0.18809382617473602,
+                          "Y": 0.6505779027938843
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "TextModelVersion": "3.0",
+                "ResponseMetadata": {
+                  "RequestId": "634f08d4-c45d-4667-93c3-230bfb1e646f",
+                  "HTTPStatusCode": 200,
+                  "HTTPHeaders": {
+                    "x-amzn-requestid": "634f08d4-c45d-4667-93c3-230bfb1e646f",
+                    "content-type": "application/x-amz-json-1.1",
+                    "content-length": "894",
+                    "date": "Tue, 20 Oct 2026 21:39:20 GMT"
+                  },
+                  "RetryAttempts": 0
+                }
+              }
+            }
+          ],
+          "errors": [],
+          "cost": {
+            "rekognition_calls": 1,
+            "bedrock_input_tokens": 373,
+            "bedrock_output_tokens": 28,
+            "decider_input_tokens": 624,
+            "decider_output_tokens": 4,
+            "rekognition_usd": 0.001,
+            "bedrock_usd": null,
+            "total_usd": null,
+            "notes": [
+              "Rekognition billed at $0.001/image (AWS Pricing API, us-east-1, first tier).",
+              "Bedrock cost omitted: no verified rate for 'us.anthropic.claude-haiku-4-5-20251001-v1:0'. Token counts above are exact; add 'bedrock_usd_per_1k_tokens' to pricing.json to price them.",
+              "Decider 2B tokens are not billed per token: the model runs on self-managed compute. See the benchmark report for the hourly instance cost."
+            ]
+          },
+          "stop_reason": "terminal_action",
+          "policy_overrides": 0,
+          "bedrock_fell_back_from": null,
+          "case_id": "stop-sign"
+        },
+        {
+          "schema_version": 1,
+          "timestamp_utc": "2026-10-20T21:39:24.252753+00:00",
+          "question": "What vehicles appear and what text can be read on the sign?",
+          "image_path": "/home/ubuntu/roadsense/demo/photos/speed-limit.jpg",
+          "max_steps": 4,
+          "outcome": "answered",
+          "answer": "Three cars appear in the image on a freeway or highway. A road sign is visible with text reading \"SPEED LIMIT 55 EAST 6,\" indicating a speed limit of 55 with directional and route information.",
+          "decider_backend": "in-process:StrandsAgents/strands-decider-2B-qwen3.5-v1-2610",
+          "bedrock_model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+          "bedrock_usage": {
+            "input_tokens": 1137,
+            "output_tokens": 52,
+            "latency_ms": 1085.8
+          },
+          "wall_ms": 2468.2,
+          "steps": [
+            {
+              "step": 1,
+              "action": "detect_objects",
+              "confidence": 0.7742,
+              "probabilities": {
+                "detect_objects": 0.8307,
+                "read_sign_text": 0.1592,
+                "request_better_evidence": 0.0059,
+                "answer": 0.0042
+              },
+              "evidence_sufficient": 0.1965,
+              "latency_ms": 159.85106300001917,
+              "rejected": null,
+              "decider_called": true,
+              "offered_actions": [
+                "answer",
+                "detect_objects",
+                "read_sign_text",
+                "request_better_evidence"
+              ]
+            },
+            {
+              "step": 2,
+              "action": "read_sign_text",
+              "confidence": 0.9778,
+              "probabilities": {
+                "read_sign_text": 0.9852,
+                "request_better_evidence": 0.0053,
+                "answer": 0.0095
+              },
+              "evidence_sufficient": 0.1856,
+              "latency_ms": 157.16956799997206,
+              "rejected": null,
+              "decider_called": true,
+              "offered_actions": [
+                "answer",
+                "read_sign_text",
+                "request_better_evidence"
+              ]
+            },
+            {
+              "step": 3,
+              "action": "answer",
+              "confidence": 0.9458,
+              "probabilities": {
+                "request_better_evidence": 0.0271,
+                "answer": 0.9729
+              },
+              "evidence_sufficient": 0.6191,
+              "latency_ms": 158.19111799999064,
+              "rejected": null,
+              "decider_called": true,
+              "offered_actions": [
+                "answer",
+                "request_better_evidence"
+              ]
+            }
+          ],
+          "evidence": [
+            {
+              "tool": "detect_objects",
+              "ok": true,
+              "summary": "Objects detected: Road (1.00), Freeway (1.00), Highway (1.00), Car (1.00), Transportation (1.00), Vehicle (1.00), Tarmac (0.97), City (0.89).",
+              "items": [
+                {
+                  "name": "Road",
+                  "confidence": 1.0,
+                  "instances": 0
+                },
+                {
+                  "name": "Freeway",
+                  "confidence": 1.0,
+                  "instances": 0
+                },
+                {
+                  "name": "Highway",
+                  "confidence": 1.0,
+                  "instances": 0
+                },
+                {
+                  "name": "Car",
+                  "confidence": 0.9951,
+                  "instances": 3
+                },
+                {
+                  "name": "Transportation",
+                  "confidence": 0.9951,
+                  "instances": 0
+                },
+                {
+                  "name": "Vehicle",
+                  "confidence": 0.9951,
+                  "instances": 0
+                },
+                {
+                  "name": "Tarmac",
+                  "confidence": 0.9669,
+                  "instances": 0
+                },
+                {
+                  "name": "City",
+                  "confidence": 0.8883,
+                  "instances": 0
+                },
+                {
+                  "name": "Road Sign",
+                  "confidence": 0.8719,
+                  "instances": 1
+                },
+                {
+                  "name": "Sign",
+                  "confidence": 0.8719,
+                  "instances": 0
+                },
+                {
+                  "name": "Symbol",
+                  "confidence": 0.8719,
+                  "instances": 0
+                },
+                {
+                  "name": "Urban",
+                  "confidence": 0.8116,
+                  "instances": 0
+                },
+                {
+                  "name": "Outdoors",
+                  "confidence": 0.7856,
+                  "instances": 0
+                }
+              ],
+              "quality": 1.0,
+              "error": null,
+              "duration_ms": 419.0760840000394,
+              "raw": {
+                "Labels": [
+                  {
+                    "Name": "Road",
+                    "Confidence": 100.0,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Transport and Logistics"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Freeway",
+                    "Confidence": 99.99961853027344,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "Road"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Transport and Logistics"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Highway",
+                    "Confidence": 99.99961853027344,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "Freeway"
+                      },
+                      {
+                        "Name": "Road"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Transport and Logistics"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Car",
+                    "Confidence": 99.51051330566406,
+                    "Instances": [
+                      {
+                        "BoundingBox": {
+                          "Width": 0.015402698889374733,
+                          "Height": 0.01927163638174534,
+                          "Left": 0.2708977460861206,
+                          "Top": 0.5161672234535217
+                        },
+                        "Confidence": 99.51051330566406
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.014396619983017445,
+                          "Height": 0.018039997667074203,
+                          "Left": 0.2988073229789734,
+                          "Top": 0.5177937746047974
+                        },
+                        "Confidence": 99.45458221435547
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.013100910000503063,
+                          "Height": 0.013395394198596478,
+                          "Left": 0.9742739796638489,
+                          "Top": 0.4318554699420929
+                        },
+                        "Confidence": 61.71387481689453
+                      }
+                    ],
+                    "Parents": [
+                      {
+                        "Name": "Transportation"
+                      },
+                      {
+                        "Name": "Vehicle"
+                      }
+                    ],
+                    "Aliases": [
+                      {
+                        "Name": "Automobile"
+                      }
+                    ],
+                    "Categories": [
+                      {
+                        "Name": "Vehicles and Automotive"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Transportation",
+                    "Confidence": 99.51051330566406,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Vehicles and Automotive"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Vehicle",
+                    "Confidence": 99.51051330566406,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "Transportation"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Vehicles and Automotive"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Tarmac",
+                    "Confidence": 96.6942367553711,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "Road"
+                      }
+                    ],
+                    "Aliases": [
+                      {
+                        "Name": "Asphalt"
+                      }
+                    ],
+                    "Categories": [
+                      {
+                        "Name": "Transport and Logistics"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "City",
+                    "Confidence": 88.83148956298828,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [
+                      {
+                        "Name": "Town"
+                      }
+                    ],
+                    "Categories": [
+                      {
+                        "Name": "Buildings and Architecture"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Road Sign",
+                    "Confidence": 87.18563842773438,
+                    "Instances": [
+                      {
+                        "BoundingBox": {
+                          "Width": 0.04601874202489853,
+                          "Height": 0.09040167927742004,
+                          "Left": 0.7101103067398071,
+                          "Top": 0.40468716621398926
+                        },
+                        "Confidence": 87.18563842773438
+                      }
+                    ],
+                    "Parents": [
+                      {
+                        "Name": "Sign"
+                      },
+                      {
+                        "Name": "Symbol"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Transport and Logistics"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Sign",
+                    "Confidence": 87.18563842773438,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "Symbol"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Symbols and Flags"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Symbol",
+                    "Confidence": 87.18563842773438,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Symbols and Flags"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Urban",
+                    "Confidence": 81.15584564208984,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Colors and Visual Composition"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Outdoors",
+                    "Confidence": 78.56305694580078,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Nature and Outdoors"
+                      }
+                    ]
+                  }
+                ],
+                "LabelModelVersion": "3.0",
+                "ResponseMetadata": {
+                  "RequestId": "de697aad-a1df-4b86-9a0e-ff17f89dff02",
+                  "HTTPStatusCode": 200,
+                  "HTTPHeaders": {
+                    "x-amzn-requestid": "de697aad-a1df-4b86-9a0e-ff17f89dff02",
+                    "content-type": "application/x-amz-json-1.1",
+                    "content-length": "2713",
+                    "date": "Tue, 20 Oct 2026 21:39:22 GMT"
+                  },
+                  "RetryAttempts": 0
+                }
+              }
+            },
+            {
+              "tool": "read_sign_text",
+              "ok": true,
+              "summary": "OCR read the text: 'SPEED | LIMIT | 55 | EAST | 6'.",
+              "items": [
+                {
+                  "text": "SPEED",
+                  "confidence": 0.9867,
+                  "line_id": 0,
+                  "box": {
+                    "Width": 0.03583526611328125,
+                    "Height": 0.0126953125,
+                    "Left": 0.7140990495681763,
+                    "Top": 0.4150390625
+                  }
+                },
+                {
+                  "text": "LIMIT",
+                  "confidence": 1.0,
+                  "line_id": 1,
+                  "box": {
+                    "Width": 0.02866821363568306,
+                    "Height": 0.0126953125,
+                    "Left": 0.7173568606376648,
+                    "Top": 0.435546875
+                  }
+                },
+                {
+                  "text": "55",
+                  "confidence": 0.9974,
+                  "line_id": 2,
+                  "box": {
+                    "Width": 0.0325775146484375,
+                    "Height": 0.02734375,
+                    "Left": 0.7160537838935852,
+                    "Top": 0.455078125
+                  }
+                },
+                {
+                  "text": "EAST",
+                  "confidence": 0.9748,
+                  "line_id": 3,
+                  "box": {
+                    "Width": 0.012379455380141735,
+                    "Height": 0.0087890625,
+                    "Left": 0.5153762698173523,
+                    "Top": 0.513671875
+                  }
+                },
+                {
+                  "text": "6",
+                  "confidence": 0.9669,
+                  "line_id": 4,
+                  "box": {
+                    "Width": 0.0065155029296875,
+                    "Height": 0.013671875,
+                    "Left": 0.518634021282196,
+                    "Top": 0.529296875
+                  }
+                }
+              ],
+              "quality": 1.0,
+              "error": null,
+              "duration_ms": 485.60508000002756,
+              "raw": {
+                "TextDetections": [
+                  {
+                    "DetectedText": "SPEED",
+                    "Type": "LINE",
+                    "Id": 0,
+                    "Confidence": 98.66812133789062,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.03583526611328125,
+                        "Height": 0.0126953125,
+                        "Left": 0.7140990495681763,
+                        "Top": 0.4150390625
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7140990495681763,
+                          "Y": 0.4150390625
+                        },
+                        {
+                          "X": 0.7499343156814575,
+                          "Y": 0.4150390625
+                        },
+                        {
+                          "X": 0.7499343156814575,
+                          "Y": 0.427734375
+                        },
+                        {
+                          "X": 0.7140990495681763,
+                          "Y": 0.427734375
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "LIMIT",
+                    "Type": "LINE",
+                    "Id": 1,
+                    "Confidence": 100.0,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.02866821363568306,
+                        "Height": 0.0126953125,
+                        "Left": 0.7173568606376648,
+                        "Top": 0.435546875
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7173568606376648,
+                          "Y": 0.435546875
+                        },
+                        {
+                          "X": 0.7460250854492188,
+                          "Y": 0.435546875
+                        },
+                        {
+                          "X": 0.7460250854492188,
+                          "Y": 0.4482421875
+                        },
+                        {
+                          "X": 0.7173568606376648,
+                          "Y": 0.4482421875
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "55",
+                    "Type": "LINE",
+                    "Id": 2,
+                    "Confidence": 99.74358367919922,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.0325775146484375,
+                        "Height": 0.02734375,
+                        "Left": 0.7160537838935852,
+                        "Top": 0.455078125
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7160537838935852,
+                          "Y": 0.455078125
+                        },
+                        {
+                          "X": 0.7486312985420227,
+                          "Y": 0.455078125
+                        },
+                        {
+                          "X": 0.7486312985420227,
+                          "Y": 0.482421875
+                        },
+                        {
+                          "X": 0.7160537838935852,
+                          "Y": 0.482421875
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "EAST",
+                    "Type": "LINE",
+                    "Id": 3,
+                    "Confidence": 97.48389434814453,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.012379455380141735,
+                        "Height": 0.0087890625,
+                        "Left": 0.5153762698173523,
+                        "Top": 0.513671875
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.5153762698173523,
+                          "Y": 0.513671875
+                        },
+                        {
+                          "X": 0.5277557373046875,
+                          "Y": 0.513671875
+                        },
+                        {
+                          "X": 0.5277557373046875,
+                          "Y": 0.5224609375
+                        },
+                        {
+                          "X": 0.5153762698173523,
+                          "Y": 0.5224609375
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "6",
+                    "Type": "LINE",
+                    "Id": 4,
+                    "Confidence": 96.69144439697266,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.0065155029296875,
+                        "Height": 0.013671875,
+                        "Left": 0.518634021282196,
+                        "Top": 0.529296875
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.518634021282196,
+                          "Y": 0.529296875
+                        },
+                        {
+                          "X": 0.5251495242118835,
+                          "Y": 0.529296875
+                        },
+                        {
+                          "X": 0.5251495242118835,
+                          "Y": 0.54296875
+                        },
+                        {
+                          "X": 0.518634021282196,
+                          "Y": 0.54296875
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "SPEED",
+                    "Type": "WORD",
+                    "Id": 5,
+                    "ParentId": 0,
+                    "Confidence": 98.66812133789062,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.03583526611328125,
+                        "Height": 0.0126953125,
+                        "Left": 0.7140990495681763,
+                        "Top": 0.4150390625
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7140990495681763,
+                          "Y": 0.4150390625
+                        },
+                        {
+                          "X": 0.7499343156814575,
+                          "Y": 0.4150390625
+                        },
+                        {
+                          "X": 0.7499343156814575,
+                          "Y": 0.427734375
+                        },
+                        {
+                          "X": 0.7140990495681763,
+                          "Y": 0.427734375
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "LIMIT",
+                    "Type": "WORD",
+                    "Id": 6,
+                    "ParentId": 1,
+                    "Confidence": 100.0,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.02866821363568306,
+                        "Height": 0.0126953125,
+                        "Left": 0.7173568606376648,
+                        "Top": 0.435546875
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7173568606376648,
+                          "Y": 0.435546875
+                        },
+                        {
+                          "X": 0.7460250854492188,
+                          "Y": 0.435546875
+                        },
+                        {
+                          "X": 0.7460250854492188,
+                          "Y": 0.4482421875
+                        },
+                        {
+                          "X": 0.7173568606376648,
+                          "Y": 0.4482421875
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "55",
+                    "Type": "WORD",
+                    "Id": 7,
+                    "ParentId": 2,
+                    "Confidence": 99.74358367919922,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.0325775146484375,
+                        "Height": 0.02734375,
+                        "Left": 0.7160537838935852,
+                        "Top": 0.455078125
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7160537838935852,
+                          "Y": 0.455078125
+                        },
+                        {
+                          "X": 0.7486312985420227,
+                          "Y": 0.455078125
+                        },
+                        {
+                          "X": 0.7486312985420227,
+                          "Y": 0.482421875
+                        },
+                        {
+                          "X": 0.7160537838935852,
+                          "Y": 0.482421875
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "EAST",
+                    "Type": "WORD",
+                    "Id": 8,
+                    "ParentId": 3,
+                    "Confidence": 97.48389434814453,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.012379455380141735,
+                        "Height": 0.0087890625,
+                        "Left": 0.5153762698173523,
+                        "Top": 0.513671875
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.5153762698173523,
+                          "Y": 0.513671875
+                        },
+                        {
+                          "X": 0.5277557373046875,
+                          "Y": 0.513671875
+                        },
+                        {
+                          "X": 0.5277557373046875,
+                          "Y": 0.5224609375
+                        },
+                        {
+                          "X": 0.5153762698173523,
+                          "Y": 0.5224609375
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "6",
+                    "Type": "WORD",
+                    "Id": 9,
+                    "ParentId": 4,
+                    "Confidence": 96.69144439697266,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.0065155029296875,
+                        "Height": 0.013671875,
+                        "Left": 0.518634021282196,
+                        "Top": 0.529296875
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.518634021282196,
+                          "Y": 0.529296875
+                        },
+                        {
+                          "X": 0.5251495242118835,
+                          "Y": 0.529296875
+                        },
+                        {
+                          "X": 0.5251495242118835,
+                          "Y": 0.54296875
+                        },
+                        {
+                          "X": 0.518634021282196,
+                          "Y": 0.54296875
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "TextModelVersion": "3.0",
+                "ResponseMetadata": {
+                  "RequestId": "fe0f91fc-1f4f-4e23-9e92-2f5d353c06d8",
+                  "HTTPStatusCode": 200,
+                  "HTTPHeaders": {
+                    "x-amzn-requestid": "fe0f91fc-1f4f-4e23-9e92-2f5d353c06d8",
+                    "content-type": "application/x-amz-json-1.1",
+                    "content-length": "3826",
+                    "date": "Tue, 20 Oct 2026 21:39:23 GMT"
+                  },
+                  "RetryAttempts": 0
+                }
+              }
+            }
+          ],
+          "errors": [],
+          "cost": {
+            "rekognition_calls": 2,
+            "bedrock_input_tokens": 1137,
+            "bedrock_output_tokens": 52,
+            "decider_input_tokens": 1050,
+            "decider_output_tokens": 6,
+            "rekognition_usd": 0.002,
+            "bedrock_usd": null,
+            "total_usd": null,
+            "notes": [
+              "Rekognition billed at $0.001/image (AWS Pricing API, us-east-1, first tier).",
+              "Bedrock cost omitted: no verified rate for 'us.anthropic.claude-haiku-4-5-20251001-v1:0'. Token counts above are exact; add 'bedrock_usd_per_1k_tokens' to pricing.json to price them.",
+              "Decider 2B tokens are not billed per token: the model runs on self-managed compute. See the benchmark report for the hourly instance cost."
+            ]
+          },
+          "stop_reason": "terminal_action",
+          "policy_overrides": 0,
+          "bedrock_fell_back_from": null,
+          "case_id": "speed-limit"
+        },
+        {
+          "schema_version": 1,
+          "timestamp_utc": "2026-10-20T21:39:26.164830+00:00",
+          "question": "What text can be read on the sign?",
+          "image_path": "/home/ubuntu/roadsense/demo/photos/intersection.jpg",
+          "max_steps": 4,
+          "outcome": "answered",
+          "answer": "The sign reads \"119th st | STOP\". The OCR tool read this text with high confidence (0.99 overall), with \"119th\" at 0.98 confidence, \"st\" at 0.83 confidence, and \"STOP\" at 0.99 confidence.",
+          "decider_backend": "in-process:StrandsAgents/strands-decider-2B-qwen3.5-v1-2610",
+          "bedrock_model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+          "bedrock_usage": {
+            "input_tokens": 544,
+            "output_tokens": 68,
+            "latency_ms": 1151.6
+          },
+          "wall_ms": 1909.7,
+          "steps": [
+            {
+              "step": 1,
+              "action": "read_sign_text",
+              "confidence": 0.8943,
+              "probabilities": {
+                "detect_objects": 0.0692,
+                "read_sign_text": 0.9207,
+                "request_better_evidence": 0.0062,
+                "answer": 0.0039
+              },
+              "evidence_sufficient": 0.2047,
+              "latency_ms": 157.39855300000727,
+              "rejected": null,
+              "decider_called": true,
+              "offered_actions": [
+                "answer",
+                "detect_objects",
+                "read_sign_text",
+                "request_better_evidence"
+              ]
+            },
+            {
+              "step": 2,
+              "action": "answer",
+              "confidence": 0.4786,
+              "probabilities": {
+                "detect_objects": 0.3169,
+                "request_better_evidence": 0.0307,
+                "answer": 0.6524
+              },
+              "evidence_sufficient": 0.835,
+              "latency_ms": 156.94768400010162,
+              "rejected": null,
+              "decider_called": true,
+              "offered_actions": [
+                "answer",
+                "detect_objects",
+                "request_better_evidence"
+              ]
+            }
+          ],
+          "evidence": [
+            {
+              "tool": "read_sign_text",
+              "ok": true,
+              "summary": "OCR read the text: '119th st | STOP'.",
+              "items": [
+                {
+                  "text": "119th",
+                  "confidence": 0.9757,
+                  "line_id": 0,
+                  "box": {
+                    "Width": 0.027069473639130592,
+                    "Height": 0.01702110469341278,
+                    "Left": 0.7836984395980835,
+                    "Top": 0.45785126090049744
+                  }
+                },
+                {
+                  "text": "st",
+                  "confidence": 0.8342,
+                  "line_id": 0,
+                  "box": {
+                    "Width": 0.00857696495950222,
+                    "Height": 0.009765625,
+                    "Left": 0.8140319585800171,
+                    "Top": 0.4580078125
+                  }
+                },
+                {
+                  "text": "STOP",
+                  "confidence": 0.9883,
+                  "line_id": 1,
+                  "box": {
+                    "Width": 0.01637420617043972,
+                    "Height": 0.021484375,
+                    "Left": 0.7883011102676392,
+                    "Top": 0.5087890625
+                  }
+                }
+              ],
+              "quality": 0.9883,
+              "error": null,
+              "duration_ms": 442.83847400004106,
+              "raw": {
+                "TextDetections": [
+                  {
+                    "DetectedText": "119th st",
+                    "Type": "LINE",
+                    "Id": 0,
+                    "Confidence": 90.49531555175781,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.03986945003271103,
+                        "Height": 0.0186245609074831,
+                        "Left": 0.7836984992027283,
+                        "Top": 0.456248015165329
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7836984992027283,
+                          "Y": 0.46110406517982483
+                        },
+                        {
+                          "X": 0.8224685788154602,
+                          "Y": 0.456248015165329
+                        },
+                        {
+                          "X": 0.8235679864883423,
+                          "Y": 0.4700165092945099
+                        },
+                        {
+                          "X": 0.7847979068756104,
+                          "Y": 0.47487255930900574
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "STOP",
+                    "Type": "LINE",
+                    "Id": 1,
+                    "Confidence": 98.83407592773438,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.01637420617043972,
+                        "Height": 0.021484375,
+                        "Left": 0.7883011102676392,
+                        "Top": 0.5087890625
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7883011102676392,
+                          "Y": 0.5087890625
+                        },
+                        {
+                          "X": 0.804675281047821,
+                          "Y": 0.5087890625
+                        },
+                        {
+                          "X": 0.804675281047821,
+                          "Y": 0.5302734375
+                        },
+                        {
+                          "X": 0.7883011102676392,
+                          "Y": 0.5302734375
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "119th",
+                    "Type": "WORD",
+                    "Id": 2,
+                    "ParentId": 0,
+                    "Confidence": 97.56591796875,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.027069473639130592,
+                        "Height": 0.01702110469341278,
+                        "Left": 0.7836984395980835,
+                        "Top": 0.45785126090049744
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7836984395980835,
+                          "Y": 0.4611038863658905
+                        },
+                        {
+                          "X": 0.8096686601638794,
+                          "Y": 0.45785126090049744
+                        },
+                        {
+                          "X": 0.8107679486274719,
+                          "Y": 0.47161972522735596
+                        },
+                        {
+                          "X": 0.7847977876663208,
+                          "Y": 0.474872350692749
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "st",
+                    "Type": "WORD",
+                    "Id": 3,
+                    "ParentId": 0,
+                    "Confidence": 83.42469787597656,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.00857696495950222,
+                        "Height": 0.009765625,
+                        "Left": 0.8140319585800171,
+                        "Top": 0.4580078125
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.8140319585800171,
+                          "Y": 0.4580078125
+                        },
+                        {
+                          "X": 0.8226089477539062,
+                          "Y": 0.4580078125
+                        },
+                        {
+                          "X": 0.8226089477539062,
+                          "Y": 0.4677734375
+                        },
+                        {
+                          "X": 0.8140319585800171,
+                          "Y": 0.4677734375
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "DetectedText": "STOP",
+                    "Type": "WORD",
+                    "Id": 4,
+                    "ParentId": 1,
+                    "Confidence": 98.83407592773438,
+                    "Geometry": {
+                      "BoundingBox": {
+                        "Width": 0.01637420617043972,
+                        "Height": 0.021484375,
+                        "Left": 0.7883011102676392,
+                        "Top": 0.5087890625
+                      },
+                      "Polygon": [
+                        {
+                          "X": 0.7883011102676392,
+                          "Y": 0.5087890625
+                        },
+                        {
+                          "X": 0.804675281047821,
+                          "Y": 0.5087890625
+                        },
+                        {
+                          "X": 0.804675281047821,
+                          "Y": 0.5302734375
+                        },
+                        {
+                          "X": 0.7883011102676392,
+                          "Y": 0.5302734375
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "TextModelVersion": "3.0",
+                "ResponseMetadata": {
+                  "RequestId": "c7676406-4b2d-4c40-83f5-572cf97a87e5",
+                  "HTTPStatusCode": 200,
+                  "HTTPHeaders": {
+                    "x-amzn-requestid": "c7676406-4b2d-4c40-83f5-572cf97a87e5",
+                    "content-type": "application/x-amz-json-1.1",
+                    "content-length": "2053",
+                    "date": "Tue, 20 Oct 2026 21:39:24 GMT"
+                  },
+                  "RetryAttempts": 0
+                }
+              }
+            }
+          ],
+          "errors": [],
+          "cost": {
+            "rekognition_calls": 1,
+            "bedrock_input_tokens": 544,
+            "bedrock_output_tokens": 68,
+            "decider_input_tokens": 630,
+            "decider_output_tokens": 4,
+            "rekognition_usd": 0.001,
+            "bedrock_usd": null,
+            "total_usd": null,
+            "notes": [
+              "Rekognition billed at $0.001/image (AWS Pricing API, us-east-1, first tier).",
+              "Bedrock cost omitted: no verified rate for 'us.anthropic.claude-haiku-4-5-20251001-v1:0'. Token counts above are exact; add 'bedrock_usd_per_1k_tokens' to pricing.json to price them.",
+              "Decider 2B tokens are not billed per token: the model runs on self-managed compute. See the benchmark report for the hourly instance cost."
+            ]
+          },
+          "stop_reason": "terminal_action",
+          "policy_overrides": 0,
+          "bedrock_fell_back_from": null,
+          "case_id": "intersection"
+        },
+        {
+          "schema_version": 1,
+          "timestamp_utc": "2026-10-20T21:39:27.757904+00:00",
+          "question": "Are there any vehicles in this photo?",
+          "image_path": "/home/ubuntu/roadsense/demo/photos/street-traffic.jpg",
+          "max_steps": 4,
+          "outcome": "answered",
+          "answer": "Yes, there are vehicles in this photo. The detection tool identified 25 cars, 10 buses, and 2 trucks with high confidence (0.99, 0.97, and 0.97 respectively). The tool also detected 13 people in the scene.",
+          "decider_backend": "in-process:StrandsAgents/strands-decider-2B-qwen3.5-v1-2610",
+          "bedrock_model": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+          "bedrock_usage": {
+            "input_tokens": 662,
+            "output_tokens": 64,
+            "latency_ms": 934.6
+          },
+          "wall_ms": 1592.5,
+          "steps": [
+            {
+              "step": 1,
+              "action": "detect_objects",
+              "confidence": 0.9887,
+              "probabilities": {
+                "detect_objects": 0.9915,
+                "read_sign_text": 0.0027,
+                "request_better_evidence": 0.0028,
+                "answer": 0.003
+              },
+              "evidence_sufficient": 0.1913,
+              "latency_ms": 157.74977000000945,
+              "rejected": null,
+              "decider_called": true,
+              "offered_actions": [
+                "answer",
+                "detect_objects",
+                "read_sign_text",
+                "request_better_evidence"
+              ]
+            },
+            {
+              "step": 2,
+              "action": "answer",
+              "confidence": 0.8638,
+              "probabilities": {
+                "read_sign_text": 0.0493,
+                "request_better_evidence": 0.0415,
+                "answer": 0.9092
+              },
+              "evidence_sufficient": 0.8355,
+              "latency_ms": 157.0301650000374,
+              "rejected": null,
+              "decider_called": true,
+              "offered_actions": [
+                "answer",
+                "read_sign_text",
+                "request_better_evidence"
+              ]
+            }
+          ],
+          "evidence": [
+            {
+              "tool": "detect_objects",
+              "ok": true,
+              "summary": "Objects detected: Road (1.00), Cityscape (1.00), Urban (1.00), City (1.00), Metropolis (1.00), Car (0.99), Vehicle (0.99), Person (0.98).",
+              "items": [
+                {
+                  "name": "Road",
+                  "confidence": 1.0,
+                  "instances": 0
+                },
+                {
+                  "name": "Cityscape",
+                  "confidence": 0.9999,
+                  "instances": 0
+                },
+                {
+                  "name": "Urban",
+                  "confidence": 0.9999,
+                  "instances": 0
+                },
+                {
+                  "name": "City",
+                  "confidence": 0.9999,
+                  "instances": 0
+                },
+                {
+                  "name": "Metropolis",
+                  "confidence": 0.9959,
+                  "instances": 0
+                },
+                {
+                  "name": "Car",
+                  "confidence": 0.9898,
+                  "instances": 25
+                },
+                {
+                  "name": "Vehicle",
+                  "confidence": 0.9898,
+                  "instances": 0
+                },
+                {
+                  "name": "Person",
+                  "confidence": 0.9773,
+                  "instances": 13
+                },
+                {
+                  "name": "Bus",
+                  "confidence": 0.9736,
+                  "instances": 10
+                },
+                {
+                  "name": "Truck",
+                  "confidence": 0.968,
+                  "instances": 2
+                },
+                {
+                  "name": "Outdoors",
+                  "confidence": 0.966,
+                  "instances": 0
+                },
+                {
+                  "name": "Construction",
+                  "confidence": 0.9594,
+                  "instances": 0
+                },
+                {
+                  "name": "Construction Crane",
+                  "confidence": 0.9594,
+                  "instances": 1
+                },
+                {
+                  "name": "Freeway",
+                  "confidence": 0.7092,
+                  "instances": 0
+                },
+                {
+                  "name": "Aerial View",
+                  "confidence": 0.6003,
+                  "instances": 0
+                }
+              ],
+              "quality": 1.0,
+              "error": null,
+              "duration_ms": 341.28941099993426,
+              "raw": {
+                "Labels": [
+                  {
+                    "Name": "Road",
+                    "Confidence": 99.99983215332031,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Transport and Logistics"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Cityscape",
+                    "Confidence": 99.99069213867188,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "Architecture"
+                      },
+                      {
+                        "Name": "Building"
+                      },
+                      {
+                        "Name": "Urban"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Buildings and Architecture"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Urban",
+                    "Confidence": 99.99069213867188,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Colors and Visual Composition"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "City",
+                    "Confidence": 99.98584747314453,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [
+                      {
+                        "Name": "Town"
+                      }
+                    ],
+                    "Categories": [
+                      {
+                        "Name": "Buildings and Architecture"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Metropolis",
+                    "Confidence": 99.59341430664062,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "City"
+                      },
+                      {
+                        "Name": "Urban"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Buildings and Architecture"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Car",
+                    "Confidence": 98.98026275634766,
+                    "Instances": [
+                      {
+                        "BoundingBox": {
+                          "Width": 0.04205656051635742,
+                          "Height": 0.049840569496154785,
+                          "Left": 0.6746286749839783,
+                          "Top": 0.4210973381996155
+                        },
+                        "Confidence": 98.98026275634766
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.14755120873451233,
+                          "Height": 0.2031266838312149,
+                          "Left": 0.08185058832168579,
+                          "Top": 0.7715396881103516
+                        },
+                        "Confidence": 98.82745361328125
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.04824519157409668,
+                          "Height": 0.06790674477815628,
+                          "Left": 0.4387608468532562,
+                          "Top": 0.4768609404563904
+                        },
+                        "Confidence": 98.47557067871094
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.07036848366260529,
+                          "Height": 0.08797275274991989,
+                          "Left": 0.4633914828300476,
+                          "Top": 0.5624287128448486
+                        },
+                        "Confidence": 98.43983459472656
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.01838986948132515,
+                          "Height": 0.02050422504544258,
+                          "Left": 0.3302379846572876,
+                          "Top": 0.36004871129989624
+                        },
+                        "Confidence": 98.21220397949219
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.03154291957616806,
+                          "Height": 0.03647400438785553,
+                          "Left": 0.4221169352531433,
+                          "Top": 0.4262014627456665
+                        },
+                        "Confidence": 98.19506072998047
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.034687161445617676,
+                          "Height": 0.041712500154972076,
+                          "Left": 0.22702491283416748,
+                          "Top": 0.4491148591041565
+                        },
+                        "Confidence": 98.16140747070312
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.022470664232969284,
+                          "Height": 0.02850264683365822,
+                          "Left": 0.40647268295288086,
+                          "Top": 0.3914293646812439
+                        },
+                        "Confidence": 97.89669799804688
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.031320907175540924,
+                          "Height": 0.0477958582341671,
+                          "Left": 0.3139885365962982,
+                          "Top": 0.46891871094703674
+                        },
+                        "Confidence": 97.81187438964844
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.03247852250933647,
+                          "Height": 0.04212089627981186,
+                          "Left": 0.3146808445453644,
+                          "Top": 0.42871490120887756
+                        },
+                        "Confidence": 97.75044250488281
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.013026690110564232,
+                          "Height": 0.01765170320868492,
+                          "Left": 0.3288145065307617,
+                          "Top": 0.3171677589416504
+                        },
+                        "Confidence": 97.4178237915039
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.0355604887008667,
+                          "Height": 0.029097773134708405,
+                          "Left": 0.36298897862434387,
+                          "Top": 0.4562857449054718
+                        },
+                        "Confidence": 97.33406066894531
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.014875316992402077,
+                          "Height": 0.020252538844943047,
+                          "Left": 0.3531479239463806,
+                          "Top": 0.3197312355041504
+                        },
+                        "Confidence": 97.10272979736328
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.018369626253843307,
+                          "Height": 0.02472725324332714,
+                          "Left": 0.2868468165397644,
+                          "Top": 0.3544512987136841
+                        },
+                        "Confidence": 96.80110931396484
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.016348600387573242,
+                          "Height": 0.016329821199178696,
+                          "Left": 0.3874223828315735,
+                          "Top": 0.34757107496261597
+                        },
+                        "Confidence": 96.01301574707031
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.01126704178750515,
+                          "Height": 0.013084596022963524,
+                          "Left": 0.33075425028800964,
+                          "Top": 0.29452913999557495
+                        },
+                        "Confidence": 95.63182830810547
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.03397950530052185,
+                          "Height": 0.0915028303861618,
+                          "Left": 0.00547174783423543,
+                          "Top": 0.6181376576423645
+                        },
+                        "Confidence": 94.6275863647461
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.014456391334533691,
+                          "Height": 0.016861196607351303,
+                          "Left": 0.2756063640117645,
+                          "Top": 0.32304883003234863
+                        },
+                        "Confidence": 94.24652099609375
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.016643762588500977,
+                          "Height": 0.024318989366292953,
+                          "Left": 0.3582581877708435,
+                          "Top": 0.34406355023384094
+                        },
+                        "Confidence": 92.6292724609375
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.012337016873061657,
+                          "Height": 0.015465067699551582,
+                          "Left": 0.3460868299007416,
+                          "Top": 0.2982064187526703
+                        },
+                        "Confidence": 91.9791259765625
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.014069127850234509,
+                          "Height": 0.01606985181570053,
+                          "Left": 0.2926785349845886,
+                          "Top": 0.3334612548351288
+                        },
+                        "Confidence": 85.03012084960938
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.011955738067626953,
+                          "Height": 0.01401454396545887,
+                          "Left": 0.2676326632499695,
+                          "Top": 0.30613553524017334
+                        },
+                        "Confidence": 80.8392105102539
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.012078451924026012,
+                          "Height": 0.013840392231941223,
+                          "Left": 0.29002276062965393,
+                          "Top": 0.30754736065864563
+                        },
+                        "Confidence": 80.4592514038086
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.013840151019394398,
+                          "Height": 0.015896741300821304,
+                          "Left": 0.5436979532241821,
+                          "Top": 0.3489086925983429
+                        },
+                        "Confidence": 72.46824645996094
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.030855119228363037,
+                          "Height": 0.01663094013929367,
+                          "Left": 0.12183096259832382,
+                          "Top": 0.2950197756290436
+                        },
+                        "Confidence": 60.79904556274414
+                      }
+                    ],
+                    "Parents": [
+                      {
+                        "Name": "Transportation"
+                      },
+                      {
+                        "Name": "Vehicle"
+                      }
+                    ],
+                    "Aliases": [
+                      {
+                        "Name": "Automobile"
+                      }
+                    ],
+                    "Categories": [
+                      {
+                        "Name": "Vehicles and Automotive"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Vehicle",
+                    "Confidence": 98.98026275634766,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "Transportation"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Vehicles and Automotive"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Person",
+                    "Confidence": 97.73454284667969,
+                    "Instances": [
+                      {
+                        "BoundingBox": {
+                          "Width": 0.03027636930346489,
+                          "Height": 0.04664474353194237,
+                          "Left": 0.31148236989974976,
+                          "Top": 0.7770004868507385
+                        },
+                        "Confidence": 97.73454284667969
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.02640538290143013,
+                          "Height": 0.03932937607169151,
+                          "Left": 0.5178267955780029,
+                          "Top": 0.7769960761070251
+                        },
+                        "Confidence": 92.94931030273438
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.03410763666033745,
+                          "Height": 0.036399926990270615,
+                          "Left": 0.7826953530311584,
+                          "Top": 0.5575366616249084
+                        },
+                        "Confidence": 85.57623291015625
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.01424264907836914,
+                          "Height": 0.05122482776641846,
+                          "Left": 0.7004590630531311,
+                          "Top": 0.5250857472419739
+                        },
+                        "Confidence": 84.67062377929688
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.014667436480522156,
+                          "Height": 0.05910077691078186,
+                          "Left": 0.01943041756749153,
+                          "Top": 0.47544336318969727
+                        },
+                        "Confidence": 77.23406982421875
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.012202071957290173,
+                          "Height": 0.04821019619703293,
+                          "Left": 0.6950565576553345,
+                          "Top": 0.5091991424560547
+                        },
+                        "Confidence": 73.95503234863281
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.06473572552204132,
+                          "Height": 0.07186949998140335,
+                          "Left": 0.30177801847457886,
+                          "Top": 0.6389452815055847
+                        },
+                        "Confidence": 67.22628784179688
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.01481008529663086,
+                          "Height": 0.02847890369594097,
+                          "Left": 0.7107718586921692,
+                          "Top": 0.5468980669975281
+                        },
+                        "Confidence": 66.82980346679688
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.011832666583359241,
+                          "Height": 0.04224390536546707,
+                          "Left": 0.7094546556472778,
+                          "Top": 0.5827677249908447
+                        },
+                        "Confidence": 66.58708953857422
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.01237823348492384,
+                          "Height": 0.0415986105799675,
+                          "Left": 0.02722834050655365,
+                          "Top": 0.5404616594314575
+                        },
+                        "Confidence": 65.15608978271484
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.009440231136977673,
+                          "Height": 0.035590603947639465,
+                          "Left": 0.5390956401824951,
+                          "Top": 0.40841802954673767
+                        },
+                        "Confidence": 64.21353149414062
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.01305232010781765,
+                          "Height": 0.053923554718494415,
+                          "Left": 0.7538405060768127,
+                          "Top": 0.5709677934646606
+                        },
+                        "Confidence": 63.14373016357422
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.027118157595396042,
+                          "Height": 0.05715298652648926,
+                          "Left": 0.35246944427490234,
+                          "Top": 0.6513506770133972
+                        },
+                        "Confidence": 60.95650100708008
+                      }
+                    ],
+                    "Parents": [],
+                    "Aliases": [
+                      {
+                        "Name": "Human"
+                      }
+                    ],
+                    "Categories": [
+                      {
+                        "Name": "Person Description"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Bus",
+                    "Confidence": 97.36201477050781,
+                    "Instances": [
+                      {
+                        "BoundingBox": {
+                          "Width": 0.15294532477855682,
+                          "Height": 0.4468747675418854,
+                          "Left": 0.2849084734916687,
+                          "Top": 0.48349592089653015
+                        },
+                        "Confidence": 97.36201477050781
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.14996972680091858,
+                          "Height": 0.3055902123451233,
+                          "Left": 0.47473710775375366,
+                          "Top": 0.6157433390617371
+                        },
+                        "Confidence": 96.0436019897461
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.12334315478801727,
+                          "Height": 0.21983639895915985,
+                          "Left": 0.20017972588539124,
+                          "Top": 0.47255024313926697
+                        },
+                        "Confidence": 95.48692321777344
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.04857084900140762,
+                          "Height": 0.08140912652015686,
+                          "Left": 0.3599136173725128,
+                          "Top": 0.3546615242958069
+                        },
+                        "Confidence": 84.15512084960938
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.014403438195586205,
+                          "Height": 0.03447141498327255,
+                          "Left": 0.47814854979515076,
+                          "Top": 0.3530113697052002
+                        },
+                        "Confidence": 70.11713409423828
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.02734198607504368,
+                          "Height": 0.01703856699168682,
+                          "Left": 0.12204066663980484,
+                          "Top": 0.29464834928512573
+                        },
+                        "Confidence": 68.21537017822266
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.046559788286685944,
+                          "Height": 0.05241316929459572,
+                          "Left": 0.3630560040473938,
+                          "Top": 0.4133234918117523
+                        },
+                        "Confidence": 67.77723693847656
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.014175176620483398,
+                          "Height": 0.015224582515656948,
+                          "Left": 0.24207600951194763,
+                          "Top": 0.2964591085910797
+                        },
+                        "Confidence": 65.50407409667969
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.035672642290592194,
+                          "Height": 0.037677470594644547,
+                          "Left": 0.1520748883485794,
+                          "Top": 0.37545010447502136
+                        },
+                        "Confidence": 62.73504638671875
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.018296122550964355,
+                          "Height": 0.014214416965842247,
+                          "Left": 0.30461129546165466,
+                          "Top": 0.2897001802921295
+                        },
+                        "Confidence": 60.45388412475586
+                      }
+                    ],
+                    "Parents": [
+                      {
+                        "Name": "Transportation"
+                      },
+                      {
+                        "Name": "Vehicle"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Vehicles and Automotive"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Truck",
+                    "Confidence": 96.80206298828125,
+                    "Instances": [
+                      {
+                        "BoundingBox": {
+                          "Width": 0.017994308844208717,
+                          "Height": 0.025672560557723045,
+                          "Left": 0.3632158637046814,
+                          "Top": 0.2982141077518463
+                        },
+                        "Confidence": 96.80206298828125
+                      },
+                      {
+                        "BoundingBox": {
+                          "Width": 0.1478663980960846,
+                          "Height": 0.22471444308757782,
+                          "Left": 0.7272962927818298,
+                          "Top": 0.4425815939903259
+                        },
+                        "Confidence": 83.19011688232422
+                      }
+                    ],
+                    "Parents": [
+                      {
+                        "Name": "Transportation"
+                      },
+                      {
+                        "Name": "Vehicle"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Vehicles and Automotive"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Outdoors",
+                    "Confidence": 96.6020278930664,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Nature and Outdoors"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Construction",
+                    "Confidence": 95.9366683959961,
+                    "Instances": [],
+                    "Parents": [],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Buildings and Architecture"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Construction Crane",
+                    "Confidence": 95.9366683959961,
+                    "Instances": [
+                      {
+                        "BoundingBox": {
+                          "Width": 0.0346774086356163,
+                          "Height": 0.09524250030517578,
+                          "Left": 0.7666714787483215,
+                          "Top": 0.019722063094377518
+                        },
+                        "Confidence": 95.9366683959961
+                      }
+                    ],
+                    "Parents": [
+                      {
+                        "Name": "Construction"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Tools and Machinery"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Freeway",
+                    "Confidence": 70.9245834350586,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "Road"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Transport and Logistics"
+                      }
+                    ]
+                  },
+                  {
+                    "Name": "Aerial View",
+                    "Confidence": 60.029869079589844,
+                    "Instances": [],
+                    "Parents": [
+                      {
+                        "Name": "Outdoors"
+                      }
+                    ],
+                    "Aliases": [],
+                    "Categories": [
+                      {
+                        "Name": "Colors and Visual Composition"
+                      }
+                    ]
+                  }
+                ],
+                "LabelModelVersion": "3.0",
+                "ResponseMetadata": {
+                  "RequestId": "b88664df-1e5a-49ea-b657-2c26ce80cecc",
+                  "HTTPStatusCode": 200,
+                  "HTTPHeaders": {
+                    "x-amzn-requestid": "b88664df-1e5a-49ea-b657-2c26ce80cecc",
+                    "content-type": "application/x-amz-json-1.1",
+                    "content-length": "10591",
+                    "date": "Tue, 20 Oct 2026 21:39:26 GMT"
+                  },
+                  "RetryAttempts": 0
+                }
+              }
+            }
+          ],
+          "errors": [],
+          "cost": {
+            "rekognition_calls": 1,
+            "bedrock_input_tokens": 662,
+            "bedrock_output_tokens": 64,
+            "decider_input_tokens": 670,
+            "decider_output_tokens": 4,
+            "rekognition_usd": 0.001,
+            "bedrock_usd": null,
+            "total_usd": null,
+            "notes": [
+              "Rekognition billed at $0.001/image (AWS Pricing API, us-east-1, first tier).",
+              "Bedrock cost omitted: no verified rate for 'us.anthropic.claude-haiku-4-5-20251001-v1:0'. Token counts above are exact; add 'bedrock_usd_per_1k_tokens' to pricing.json to price them.",
+              "Decider 2B tokens are not billed per token: the model runs on self-managed compute. See the benchmark report for the hourly instance cost."
+            ]
+          },
+          "stop_reason": "terminal_action",
+          "policy_overrides": 0,
+          "bedrock_fell_back_from": null,
+          "case_id": "street-traffic"
+        }
+      ]
+    }
+  ]
+}

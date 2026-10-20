@@ -30,6 +30,9 @@ import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
+#: Widest the page ever shows an image. Embedding anything larger is dead weight.
+EMBED_WIDTH = 760
+
 ACTION_ORDER = ["detect_objects", "read_sign_text", "request_better_evidence", "answer"]
 ACTION_LABEL = {
     "detect_objects": "detect objects",
@@ -68,23 +71,77 @@ SCENES = {
 }
 
 
+#: The same agent, unchanged, on photographs a person actually took. These are not in
+#: the benchmark -- a degradation dial you can set is worth more there than realism --
+#: but a vision agent that has only ever been shown drawings is not worth believing.
+PHOTO_SCENES = {
+    "stop-sign": {
+        "title": "A real stop sign",
+        "blurb": "One tool is enough: the question only asks about text, so it reads and stops.",
+        "kind": "good",
+    },
+    "speed-limit": {
+        "title": "A real highway",
+        "blurb": "Two tools in sequence. It finds the cars, then reads SPEED LIMIT 55 off a sign in the distance.",
+        "kind": "good",
+    },
+    "intersection": {
+        "title": "A real junction",
+        "blurb": "A small street sign at the far side of the road, seen at an angle — and it reads both lines.",
+        "kind": "good",
+    },
+    "street-traffic": {
+        "title": "Real traffic",
+        "blurb": "Twenty-five cars and ten buses. Number plates were blurred before publishing; the detector never needed them.",
+        "kind": "good",
+    },
+}
+
+
 def embed(path: str | None) -> str | None:
+    """Inline an image as a data URI, whether it is synthetic or a photograph."""
     if not path:
         return None
-    local = ROOT / "demo" / "images" / pathlib.Path(path).name
-    if not local.is_file() or local.stat().st_size == 0:
+    name = pathlib.Path(path).name
+    local = next(
+        (c for c in (ROOT / "demo" / "images" / name, ROOT / "demo" / "photos" / name)
+         if c.is_file() and c.stat().st_size > 0),
+        None,
+    )
+    if local is None:
         return None
+
+    # Photographs arrive at 1280 px and weigh ~400 KB each; base64 adds a third on
+    # top. Four of them would make this page a 2 MB download for images the layout
+    # never shows wider than ~300 px. Re-encode for the page, leave the file alone.
+    raw = local.read_bytes()
     mime = mimetypes.guess_type(local.name)[0] or "image/jpeg"
-    return f"data:{mime};base64," + base64.b64encode(local.read_bytes()).decode()
+    if len(raw) > 120_000:
+        try:
+            import io
+
+            from PIL import Image
+
+            img = Image.open(io.BytesIO(raw)).convert("RGB")
+            img.thumbnail((EMBED_WIDTH, EMBED_WIDTH), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, "JPEG", quality=78, optimize=True)
+            raw, mime = buf.getvalue(), "image/jpeg"
+        except Exception:
+            pass  # Pillow absent: ship the original rather than no image at all.
+    return f"data:{mime};base64," + base64.b64encode(raw).decode()
 
 
-def collect(results: pathlib.Path) -> list[dict]:
+def collect(results: pathlib.Path, scene_map: dict, group: str) -> list[dict]:
+    """Turn one results file into scenes. A missing file yields nothing, not an error."""
+    if not results.is_file():
+        return []
     data = json.loads(results.read_text(encoding="utf-8"))
     decider = next(r for r in data["results"] if r["arm"] == "decider")
     by_id = {t["case_id"]: t for t in decider["traces"]}
 
     out = []
-    for cid, meta in SCENES.items():
+    for cid, meta in scene_map.items():
         t = by_id.get(cid)
         if t is None:
             continue
@@ -111,7 +168,7 @@ def collect(results: pathlib.Path) -> list[dict]:
             })
         cost = t.get("cost", {})
         out.append({
-            "id": cid, **meta,
+            "id": cid, "group": group, **meta,
             "question": t["question"],
             "image": embed(t["image_path"]),
             "outcome": t["outcome"],
@@ -243,6 +300,30 @@ h1 em{font-style:italic;color:var(--chosen)}
  border-radius:999px;border:1px solid var(--rule);background:var(--surface);
  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;color:var(--muted)}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+
+/* Exactly four, because there are exactly four steps. auto-fit happily makes a
+   fifth empty column when the viewport allows it, which reads as a missing step. */
+.loop{display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+ margin:30px 0 8px;border:1px solid var(--rule);border-radius:7px;overflow:hidden;background:var(--surface)}
+.loop div{padding:16px 18px;border-right:1px solid var(--rule);position:relative}
+.loop div:last-child{border-right:none}
+@media(max-width:860px){.loop{grid-template-columns:repeat(2,1fr)}
+ .loop div:nth-child(2n){border-right:none}
+ .loop div:nth-child(-n+2){border-bottom:1px solid var(--rule)}}
+@media(max-width:480px){.loop{grid-template-columns:1fr}
+ .loop div{border-right:none;border-bottom:1px solid var(--rule)}}
+.loop b{display:block;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;
+ letter-spacing:.1em;text-transform:uppercase;color:var(--chosen);margin-bottom:6px;font-weight:500}
+.loop p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.45}
+.loop .back{grid-column:1/-1;border-right:none;border-top:1px solid var(--rule);
+ background:var(--sunk);font-size:12.5px;color:var(--faint);padding:10px 18px;text-align:center}
+.loop .back b{display:inline;color:var(--muted);letter-spacing:.04em;text-transform:none;
+ font-family:inherit;font-size:12.5px}
+
+.grouphead{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;margin:26px 0 11px}
+.grouphead h3{margin:0;font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:21px}
+.grouphead span{font-size:12.5px;color:var(--faint);line-height:1.4}
+.grouphead a{color:var(--muted)}
 
 .legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:11px;
  margin:34px 0 30px}
@@ -399,18 +480,28 @@ footer a{color:var(--muted)}
 <div class="wrap">
   <p class="eyebrow">Strands Decider 2B &middot; tool selection</p>
   <h1>It decides, looks, then <em>decides again</em></h1>
-  <p class="lede">RoadSense answers questions about road photographs. It has four things it can
-    do and picks one at a time &mdash; seeing what came back before choosing the next. Every
-    number below came out of a real run.</p>
+  <p class="lede">Ask a question about a road photograph and most agents do one of two things:
+    run every tool they have, or guess which one to run from the wording of the question.
+    RoadSense does neither. It picks one action, waits to see what comes back, and then
+    picks again &mdash; and the second choice is frequently not the one it would have made
+    first. A 2-billion-parameter model called <b>Strands Decider 2B</b> makes every one of
+    those choices, in about 95&nbsp;ms, without writing a single word.</p>
   <span class="recorded"><span class="dot"></span> recorded runs &middot; A10G GPU &middot; nothing staged</span>
 
   <div class="stats" id="stats"></div>
 
-  <div class="legend">
-    <div><b>the menu</b><span>Four actions. Decider scores all of them and the bars show what it gave each.</span></div>
-    <div><b>withdrawn</b><span>An action that is illegal right now is removed before the model sees it.</span></div>
-    <div><b>the evidence</b><span>The chosen tool runs and reports back, with its own confidence.</span></div>
-    <div><b>the answer</b><span>Bedrock writes it, and never sees the photo &mdash; only what the tools found.</span></div>
+  <div class="loop">
+    <div><b>1 &middot; the menu</b><p>Four actions. Decider scores all of them at once and the
+      bars show the probability it gave each.</p></div>
+    <div><b>2 &middot; withdrawn</b><p>An action that is illegal right now &mdash; a tool that already
+      ran, OCR with no image &mdash; is removed before the model ever sees it.</p></div>
+    <div><b>3 &middot; the evidence</b><p>The chosen tool runs and reports back, carrying its own
+      confidence rather than one the agent invented.</p></div>
+    <div><b>4 &middot; the answer</b><p>Amazon Bedrock writes it, and never sees the photo &mdash;
+      only what the tools found. It cannot describe what was not reported.</p></div>
+    <div class="back"><b>and then it loops.</b> The new evidence goes back into the state, the
+      menu gets shorter, and step&nbsp;1 happens again &mdash; until the model picks an action that
+      ends the run, or the step budget does it for them.</div>
   </div>
 
   <div class="live off" id="live">
@@ -430,8 +521,7 @@ footer a{color:var(--muted)}
     </div>
   </div>
 
-  <p class="eyebrow" style="margin-bottom:12px">or replay a recorded run</p>
-  <div class="scenes" id="scenes"></div>
+  <div id="groups"></div>
 
   <div class="bar">
     <span class="q" id="q"></span>
@@ -461,20 +551,41 @@ const fmt = (n,d=3) => (n===null||n===undefined) ? "—" : Number(n).toFixed(d);
 const sleep = ms => new Promise(r => timers.push(setTimeout(r, ms)));
 const stop = () => { timers.forEach(clearTimeout); timers = []; };
 
-SCENES.forEach((sc,i) => {
-  const b = document.createElement("button");
-  b.className = "scene"; b.type = "button"; b.setAttribute("aria-pressed", i===0 ? "true":"false");
-  b.innerHTML =
-    (sc.image ? `<img src="${sc.image}" alt="">` : `<div class="noimg">no photo</div>`) +
-    `<div class="body"><div class="t"><span class="flag ${sc.kind}"></span>${sc.title}</div>` +
-    `<div class="b">${sc.blurb}</div></div>`;
-  b.onclick = () => {
-    document.querySelectorAll(".scene").forEach(x => x.setAttribute("aria-pressed","false"));
-    b.setAttribute("aria-pressed","true");
-    current = sc; stop(); playing = false; playBtn.disabled = false; playBtn.textContent = "Play";
-    reset();
-  };
-  $("#scenes").append(b);
+// Two groups, because they answer different questions: the photographs show it is
+// real, the synthetic set shows what was measured and why those cases are repeatable.
+const GROUPS = [
+  {key: "photo", title: "Photographs",
+   note: "Real road photographs from Wikimedia Commons, CC0 and CC BY. The same agent, unchanged."},
+  {key: "synthetic", title: "The benchmark set",
+   note: "Drawn on purpose: the degradation is a dial that was measured against the live OCR, which is what makes the hard cases repeatable."},
+];
+
+GROUPS.forEach(group => {
+  const members = SCENES.filter(sc => sc.group === group.key);
+  if (!members.length) return;
+  const head = document.createElement("div");
+  head.className = "grouphead";
+  head.innerHTML = "<h3>" + group.title + "</h3><span>" + group.note + "</span>";
+  const row = document.createElement("div");
+  row.className = "scenes";
+  members.forEach(sc => {
+    const b = document.createElement("button");
+    b.className = "scene"; b.type = "button";
+    b.setAttribute("aria-pressed", sc === SCENES[0] ? "true" : "false");
+    b.innerHTML =
+      (sc.image ? '<img src="' + sc.image + '" alt="">' : '<div class="noimg">no photo</div>') +
+      '<div class="body"><div class="t"><span class="flag ' + sc.kind + '"></span>' + sc.title +
+      '</div><div class="b">' + sc.blurb + '</div></div>';
+    b.onclick = () => {
+      document.querySelectorAll(".scene").forEach(x => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", "true");
+      current = sc; stop(); playing = false;
+      playBtn.disabled = false; playBtn.textContent = "Play";
+      reset();
+    };
+    row.append(b);
+  });
+  $("#groups").append(head, row);
 });
 
 function reset() {
@@ -768,12 +879,17 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--results", default=str(ROOT / "eval/results/results_gpu.json"))
     ap.add_argument("--out", default=str(ROOT / "demo/replay.html"))
+    ap.add_argument("--photos", default=str(ROOT / "eval/results/results_photos.json"),
+                    help="traces from the real photographs; omit and the page shows only synthetic")
     ap.add_argument("--repo", default="", help="repository URL shown in the footer")
     ap.add_argument("--api", default="",
                     help="base URL of a live server; the page enables uploads when it answers")
     args = ap.parse_args()
 
-    scenes = collect(pathlib.Path(args.results))
+    # Photographs first: they are what convinces a reader the agent is real. The
+    # synthetic set comes after, because it is what measures rather than persuades.
+    scenes = (collect(pathlib.Path(args.photos), PHOTO_SCENES, "photo")
+              + collect(pathlib.Path(args.results), SCENES, "synthetic"))
     bench = collect_benchmark(pathlib.Path(args.results).parent)
     html = (
         PAGE.replace("__SCENES__", json.dumps(scenes))
