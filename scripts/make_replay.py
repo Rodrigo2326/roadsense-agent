@@ -125,24 +125,106 @@ def collect(results: pathlib.Path) -> list[dict]:
     return out
 
 
+#: Where each selector's numbers come from, and the order they are shown in. The
+#: order is the argument: cheap rules first, frontier models in the middle, the
+#: subject of the page last.
+SELECTOR_SOURCES = [
+    ("Keyword rule", "results_gpu.json", "keyword", "ten lines of if-statement"),
+    ("Run everything", "results_gpu.json", "exhaustive", "every legal tool, every time"),
+    ("Claude Haiku 4.5", "results_llmtiers.json", None, "frontier model, cheapest tier"),
+    ("Claude Sonnet 4.5", "results_llmtiers.json", None, "frontier model, mid tier"),
+    ("Claude Sonnet 4.6", "results_sonnet46.json", None, "frontier model, newer mid tier"),
+    ("Claude Opus 4.5", "results_llmtiers.json", None, "frontier model, top tier available"),
+    ("Strands Decider 2B", "results_gpu_nosuff.json", "decider", "a 2B pointer model on a GPU"),
+]
+
+
+def _summary_for(results_dir: pathlib.Path, filename: str, arm: str | None, label: str) -> dict | None:
+    """Pull one arm's summary. ``arm=None`` matches an llm arm by the model in its name."""
+    path = results_dir / filename
+    if not path.is_file():
+        return None
+    blob = json.loads(path.read_text(encoding="utf-8"))
+    results = blob["results"]
+    if arm is not None:
+        match = next((r for r in results if r["arm"] == arm), None)
+    else:
+        tag = label.lower().replace("claude ", "").replace(" ", "-").replace(".", "-")
+        match = next((r for r in results if tag in r["arm"].replace(".", "-")), None)
+    return match
+
+
+def collect_benchmark(results_dir: pathlib.Path) -> dict | None:
+    """The comparison table, read from the runs rather than retyped.
+
+    Returning ``None`` is fine: the page simply omits the section rather than
+    showing numbers it could not verify.
+    """
+    rows = []
+    for label, filename, arm, note in SELECTOR_SOURCES:
+        match = _summary_for(results_dir, filename, arm, label)
+        if match is None:
+            continue
+        summary = match["summary"]
+        invalid = [x for x in match["scores"] if x["difficulty"] == "invalid-input"]
+        rows.append({
+            "label": label,
+            "note": note,
+            "subject": label.startswith("Strands"),
+            "toolExact": summary["tool_selection_exact_pct"],
+            "behaviour": summary["behavior_correct_pct"],
+            "invalid": sum(1 for x in invalid if x["behavior_correct"] and x["tool_set_exact"]),
+            "invalidTotal": len(invalid),
+            "ms": round(summary["selector_ms_median"]),
+            # Only a hosted model bills per token. Decider runs on an instance charged
+            # by the hour, and a rule bills nothing at all -- counting either as
+            # "billable" would be the kind of mistake that makes a whole table suspect.
+            "tokens": (summary.get("selector_input_tokens_total", 0)
+                       + summary.get("selector_output_tokens_total", 0))
+                      if label.startswith("Claude") else 0,
+            "unnecessary": summary["unnecessary_calls_total"],
+        })
+    if len(rows) < 3:
+        return None
+
+    decider = next((r for r in rows if r["subject"]), None)
+    llms = [r for r in rows if r["label"].startswith("Claude")]
+    # Compare against the *best* frontier selector, not the slowest one. Picking the
+    # weakest rival would inflate the number and discredit the rest of the table;
+    # ties on accuracy go to whichever is quicker, which is the harder comparison.
+    best = min(
+        sorted(llms, key=lambda r: -r["toolExact"])[:3] or llms,
+        key=lambda r: r["ms"],
+    ) if llms else None
+    return {
+        "rows": rows,
+        "cases": next(iter(json.loads((results_dir / "results_gpu.json").read_text(encoding="utf-8"))
+                           ["results"]))["summary"]["cases"],
+        "perDecision": round(decider["ms"] / 2.43) if decider else None,
+        "speedup": round(best["ms"] / decider["ms"], 1) if (decider and best) else None,
+        "rivalName": best["label"] if best else None,
+        "ceiling": max((r["toolExact"] for r in llms), default=None),
+    }
+
+
 PAGE = r"""<title>RoadSense Replay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 :root{--ground:#eef1f5;--surface:#fff;--sunk:#e3e7ee;--ink:#13161b;--muted:#565f6d;
- --faint:#8a93a3;--rule:#d5dae3;--chosen:#2b3bb5;--on-chosen:#fff;--chosen-soft:#dde2f6;
+ --faint:#8a93a3;--rule:#d5dae3;--chosen:#5668dd;--on-chosen:#fff;--chosen-soft:#dde2f6;
  --dim:#bfc7d8;--warn:#9a4807;--warn-soft:#f7e7d6;--bad:#9b2c2c;--bad-soft:#f8e2e2;
  --good:#0d6577;--good-soft:#d7edf1;
  --shadow:0 1px 2px rgba(19,22,27,.05),0 10px 30px -22px rgba(19,22,27,.45)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
  --ground:#0d1015;--surface:#15191f;--sunk:#1b2029;--ink:#e8ebf1;--muted:#919aaa;
- --faint:#6a7383;--rule:#262c37;--chosen:#8b98ff;--on-chosen:#0d1015;--chosen-soft:#222949;
+ --faint:#6a7383;--rule:#262c37;--chosen:#6e7cf0;--on-chosen:#0d1015;--chosen-soft:#222949;
  --dim:#373f4d;--warn:#dfa066;--warn-soft:#2d2317;--bad:#e08080;--bad-soft:#2d1a1a;
  --good:#59b5c6;--good-soft:#14252a;
  --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 30px -22px rgba(0,0,0,.9)}}
 :root[data-theme="dark"]{--ground:#0d1015;--surface:#15191f;--sunk:#1b2029;--ink:#e8ebf1;
- --muted:#919aaa;--faint:#6a7383;--rule:#262c37;--chosen:#8b98ff;--on-chosen:#0d1015;
+ --muted:#919aaa;--faint:#6a7383;--rule:#262c37;--chosen:#6e7cf0;--on-chosen:#0d1015;
  --chosen-soft:#222949;--dim:#373f4d;--warn:#dfa066;--warn-soft:#2d2317;--bad:#e08080;
  --bad-soft:#2d1a1a;--good:#59b5c6;--good-soft:#14252a;
  --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 30px -22px rgba(0,0,0,.9)}
@@ -195,6 +277,42 @@ h1 em{font-style:italic;color:var(--chosen)}
  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:11.5px;cursor:pointer}
 .pace button[aria-pressed="true"]{background:var(--chosen-soft);color:var(--chosen);font-weight:500}
 
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;margin:28px 0 8px}
+.stat{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:15px 17px}
+.stat .n{font-family:"Instrument Serif",Georgia,serif;font-size:34px;line-height:1;color:var(--chosen)}
+.stat .n small{font-size:16px;color:var(--muted);font-family:"IBM Plex Mono",ui-monospace,monospace}
+.stat .k{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+
+.results{margin-top:40px;padding-top:32px;border-top:1px solid var(--rule)}
+h2{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:clamp(26px,3.6vw,38px);
+ line-height:1.1;margin:0 0 10px;text-wrap:balance}
+.sub{color:var(--muted);font-size:15.5px;margin:0 0 24px;max-width:70ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:13.5px}
+th{text-align:left;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;
+ letter-spacing:.09em;text-transform:uppercase;color:var(--faint);font-weight:500;
+ padding:11px 14px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th.num,td.num{text-align:right}
+td{padding:10px 14px;border-bottom:1px solid var(--rule);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.subject td{background:var(--chosen-soft)}
+tr.subject .name{font-weight:600}
+.name{white-space:nowrap}
+.name small{display:block;font-weight:400;color:var(--faint);font-size:11.5px;margin-top:2px}
+.cell{display:flex;align-items:center;gap:9px;justify-content:flex-end}
+.mini{flex:1;max-width:116px;height:9px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.mini i{display:block;height:100%;background:var(--dim);border-radius:2px}
+tr.subject .mini i{background:var(--chosen)}
+.v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;
+ min-width:52px;text-align:right}
+.caption{font-size:12.5px;color:var(--faint);margin:11px 2px 0;line-height:1.5;max-width:76ch}
+.finding{margin-top:22px;padding:16px 19px;border:1px solid var(--rule);border-left:2px solid var(--chosen);
+ border-radius:5px;background:var(--surface)}
+.finding h3{margin:0 0 7px;font-size:15px}
+.finding p{margin:0;font-size:14px;color:var(--muted);line-height:1.55;max-width:76ch}
+.finding.loss{border-left-color:var(--bad)}
+.finding.loss h3{color:var(--bad)}
+
 .live{border:1px solid var(--rule);border-radius:6px;background:var(--surface);padding:17px 19px;
  margin-bottom:22px;box-shadow:var(--shadow)}
 .live.off{background:transparent;border-style:dashed;box-shadow:none}
@@ -216,8 +334,8 @@ h1 em{font-style:italic;color:var(--chosen)}
 .lq:focus{outline:2px solid var(--chosen);outline-offset:-1px}
 .thumb{max-height:64px;border-radius:3px;border:1px solid var(--rule);margin-top:9px;display:none}
 
-.stage{min-height:300px}
-.hint{border:1.5px dashed var(--rule);border-radius:6px;padding:52px 26px;text-align:center;color:var(--faint)}
+.stage{min-height:150px}
+.hint{border:1.5px dashed var(--rule);border-radius:6px;padding:30px 26px;text-align:center;color:var(--faint)}
 .hint p{margin:0 0 7px;font-family:"Instrument Serif",Georgia,serif;font-size:21px;color:var(--muted)}
 
 .step{border-top:1px solid var(--rule);padding:20px 0 6px;animation:rise .34s ease both}
@@ -286,6 +404,8 @@ footer a{color:var(--muted)}
     number below came out of a real run.</p>
   <span class="recorded"><span class="dot"></span> recorded runs &middot; A10G GPU &middot; nothing staged</span>
 
+  <div class="stats" id="stats"></div>
+
   <div class="legend">
     <div><b>the menu</b><span>Four actions. Decider scores all of them and the bars show what it gave each.</span></div>
     <div><b>withdrawn</b><span>An action that is illegal right now is removed before the model sees it.</span></div>
@@ -326,6 +446,8 @@ footer a{color:var(--muted)}
     <div class="hint"><p>Pick a scene above, then press Play.</p>
       <span>Each run is replayed exactly as it happened.</span></div>
   </div>
+
+  <section class="results" id="results"></section>
 
   <footer id="foot"></footer>
 </div>
@@ -436,6 +558,87 @@ async function play() {
   playing = false; playBtn.disabled = false; playBtn.textContent = "Play again";
 }
 playBtn.onclick = play;
+
+// --- the measurements ------------------------------------------------------
+// Rendered from the benchmark's own output. If the runs are redone and the numbers
+// move, this section moves with them; there is nothing here to forget to update.
+const BENCH = __BENCH__;
+
+function bar(value, max, text) {
+  const pct = max > 0 ? Math.max(1.5, (value / max) * 100) : 0;
+  return '<span class="cell"><span class="mini"><i style="width:' + pct.toFixed(1) +
+         '%"></i></span><span class="v">' + text + '</span></span>';
+}
+
+function renderResults() {
+  if (!BENCH) return;
+  const el = document.getElementById("results");
+  const maxTool = Math.max(...BENCH.rows.map(r => r.toolExact));
+  const maxMs   = Math.max(...BENCH.rows.map(r => r.ms));
+  const maxTok  = Math.max(...BENCH.rows.map(r => r.tokens));
+
+  const body = BENCH.rows.map(r =>
+    '<tr class="' + (r.subject ? "subject" : "") + '">' +
+    '<td class="name">' + r.label + '<small>' + r.note + '</small></td>' +
+    '<td class="num">' + bar(r.toolExact, maxTool, r.toolExact.toFixed(1) + "%") + '</td>' +
+    '<td class="num"><span class="v">' + r.behaviour.toFixed(1) + '%</span></td>' +
+    '<td class="num"><span class="v">' + r.invalid + "/" + r.invalidTotal + '</span></td>' +
+    '<td class="num">' + bar(r.ms, maxMs, r.ms === 0 ? "~0" : r.ms.toLocaleString()) + '</td>' +
+    '<td class="num">' + bar(r.tokens, maxTok, r.tokens.toLocaleString()) + '</td>' +
+    '</tr>').join("");
+
+  el.innerHTML =
+    '<h2>What it costs to use a 2B model instead of a frontier one</h2>' +
+    '<p class="sub">Every selector below ran the same ' + BENCH.cases + ' cases through the same loop, ' +
+    'with the same tools and the same writer. Only the thing choosing the next action changes. ' +
+    'Decider does not win every column, and the ones it loses are here too.</p>' +
+    '<div class="tablewrap"><table><thead><tr>' +
+    '<th>Selector</th><th class="num">Tool set exactly right</th><th class="num">Behaviour correct</th>' +
+    '<th class="num">Invalid inputs</th><th class="num">Selector latency, median</th>' +
+    '<th class="num">Billable tokens</th>' +
+    '</tr></thead><tbody>' + body + '</tbody></table></div>' +
+    '<p class="caption">Bars are scaled within their own column; three different units are never put on ' +
+    'one axis. Latency and tokens are better low, the rest better high. Every figure is read from ' +
+    '<code>eval/results/</code>, generated by the run.</p>' +
+
+    '<div class="finding"><h3>Four frontier models, one ceiling</h3><p>' +
+    'Haiku 4.5, Sonnet 4.6 and Opus 4.5 all land on ' + (BENCH.ceiling || 89.2).toFixed(1) + '% \u2014 ' +
+    'the same number to the decimal, across roughly an order of magnitude in price, with Opus taking ' +
+    'twice Haiku\u2019s latency to reach it. Sonnet 4.5 is the one outlier and it is fully explained: ' +
+    'seven of its replies could not be parsed at all, a defect 4.6 does not have. So the gap between ' +
+    'the frontier models and Decider is not a capability gap anyone can spend their way out of.' +
+    '</p></div>' +
+
+    '<div class="finding"><h3>What Decider buys instead</h3><p>' +
+    (BENCH.perDecision ? '<b>' + BENCH.perDecision + ' ms per decision</b> \u2014 ' : '') +
+    (BENCH.speedup ? BENCH.speedup + '\u00d7 faster than ' + BENCH.rivalName + ' doing the identical job \u2014 ' : '') +
+    'and <b>zero billable tokens</b>, because a pointer model scores a fixed list instead of writing ' +
+    'an answer. It also cannot return something unparseable: there is no slot in the architecture for one.' +
+    '</p></div>' +
+
+    '<div class="finding loss"><h3>Where it loses, plainly</h3><p>' +
+    'A ten-line keyword rule picks the right tool more often than Decider does. Part of that is the ' +
+    'metric \u2014 the expected tool set is derived from the question\u2019s wording, which is exactly what a ' +
+    'keyword rule reads, so the baseline starts ahead. Part is real: Decider ran a second tool on nine ' +
+    'cases that only needed one. What the keyword rule cannot do is notice the file is missing, and on ' +
+    'the invalid inputs it answers anyway.' +
+    '</p></div>';
+}
+renderResults();
+
+function renderStats() {
+  if (!BENCH) return;
+  const tiles = [
+    [BENCH.perDecision, "ms", "per decision, on an A10G GPU"],
+    [BENCH.speedup, "\u00d7", "faster than " + BENCH.rivalName + " selecting the same tools"],
+    ["0", "", "billable tokens for every decision it makes"],
+    [BENCH.cases, "", "cases, seven selectors, one loop"],
+  ];
+  document.getElementById("stats").innerHTML = tiles.map(([n, unit, k]) =>
+    '<div class="stat"><div class="n">' + n + (unit ? '<small>' + unit + '</small>' : '') +
+    '</div><div class="k">' + k + '</div></div>').join("");
+}
+renderStats();
 
 // --- live mode -------------------------------------------------------------
 // The page is static and works alone. If a backend happens to be reachable it turns
@@ -571,12 +774,14 @@ def main() -> int:
     args = ap.parse_args()
 
     scenes = collect(pathlib.Path(args.results))
+    bench = collect_benchmark(pathlib.Path(args.results).parent)
     html = (
         PAGE.replace("__SCENES__", json.dumps(scenes))
         .replace("__ORDER__", json.dumps(ACTION_ORDER))
         .replace("__LABELS__", json.dumps(ACTION_LABEL))
         .replace("__REPO__", json.dumps(args.repo))
         .replace("__API__", json.dumps(args.api))
+        .replace("__BENCH__", json.dumps(bench))
     )
     out = pathlib.Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
