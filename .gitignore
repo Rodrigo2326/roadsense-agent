@@ -13,3 +13,6 @@ pricing.json
 # el sitio publico es un build; se regenera con scripts/make_replay.py
 site/
 .wrangler/
+
+# registro interno de trabajo: contiene IDs de cuenta, instancias e IPs propias
+IMPLEMENTATION_STATUS.md

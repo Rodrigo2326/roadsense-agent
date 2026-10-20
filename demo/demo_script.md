@@ -10,16 +10,22 @@ la protagonista. El terminal aparece solo al final, para las mediciones.
 
 ## Antes de grabar
 
+Define primero tus identificadores (no están en el repo a propósito):
+
 ```bash
+GPU_INSTANCE=i-xxxxxxxxxxxx   # la instancia con GPU
+CPU_INSTANCE=i-xxxxxxxxxxxx   # la instancia CPU
+SG_ID=sg-xxxxxxxxxxxx         # el security group del proyecto
+
 # 1. Arrancar la GPU
-aws ec2 start-instances --instance-ids i-00b41b0df701ba2ed --region us-east-1
-aws ec2 wait instance-running --instance-ids i-00b41b0df701ba2ed --region us-east-1
-IP=$(aws ec2 describe-instances --instance-ids i-00b41b0df701ba2ed --region us-east-1 \
+aws ec2 start-instances --instance-ids $GPU_INSTANCE --region us-east-1
+aws ec2 wait instance-running --instance-ids $GPU_INSTANCE --region us-east-1
+IP=$(aws ec2 describe-instances --instance-ids $GPU_INSTANCE --region us-east-1 \
      --query "Reservations[0].Instances[0].PublicIpAddress" --output text); echo $IP
 
 # 2. Abrir el puerto 8080 para tu IP de hoy
 MYIP=$(curl -s https://checkip.amazonaws.com)
-aws ec2 authorize-security-group-ingress --group-id sg-010c4ec7103ba5dee \
+aws ec2 authorize-security-group-ingress --group-id $SG_ID \
   --protocol tcp --port 8080 --cidr $MYIP/32 --region us-east-1
 
 # 3. Levantar el servidor
@@ -131,7 +137,7 @@ Lee en voz alta el principio de la respuesta final:
 > "But the keyword rule cannot notice that the file is missing. On the invalid inputs
 > it answers anyway, two out of five. Decider gets five out of five."
 
-> "Sixty-one tests, Apache-2.0, and every number came from a run, not from a
+> "Seventy-eight tests, Apache-2.0, and every number came from a run, not from a
 > spreadsheet."
 
 ## 2:50–2:55 · Cierre
@@ -156,6 +162,6 @@ Lee en voz alta el principio de la respuesta final:
 ## Después de grabar
 
 ```bash
-aws ec2 stop-instances --instance-ids i-00b41b0df701ba2ed --region us-east-1
-aws ec2 stop-instances --instance-ids i-0c4ac9fece9f5625b --region us-east-1
+aws ec2 stop-instances --instance-ids $GPU_INSTANCE --region us-east-1
+aws ec2 stop-instances --instance-ids $CPU_INSTANCE --region us-east-1
 ```

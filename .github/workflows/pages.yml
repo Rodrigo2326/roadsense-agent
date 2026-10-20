@@ -1,0 +1,69 @@
+name: Deploy demo page
+
+# The public page is a build artifact, not a checked-in file: it is regenerated from
+# eval/results/results_gpu.json on every push, so the demo can never drift away from
+# the benchmark it claims to show.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/make_replay.py"
+      - "eval/results/results_gpu.json"
+      - "demo/images/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; never cancel one midway, so a half-written site is impossible.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build the page
+        run: |
+          python scripts/make_replay.py \
+            --out site/index.html \
+            --repo "https://github.com/${{ github.repository }}"
+
+      - name: Check it actually contains the traces
+        run: |
+          python - <<'PY'
+          import json, pathlib, re, sys
+          html = pathlib.Path("site/index.html").read_text(encoding="utf-8")
+          for placeholder in ("__SCENES__", "__ORDER__", "__LABELS__", "__API__", "__REPO__"):
+              assert placeholder not in html, f"{placeholder} was never substituted"
+          scenes = json.loads(re.search(r"const SCENES = (\[.*?\]), ORDER", html, re.S).group(1))
+          assert len(scenes) >= 3, f"only {len(scenes)} scenes embedded"
+          assert all(s["steps"] for s in scenes), "a scene has no steps"
+          print(f"ok: {len(scenes)} scenes, {len(html)//1024} KB")
+          PY
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -98,9 +98,10 @@ you manage.
 
 | Resource | Identifier | Notes |
 |---|---|---|
-| EC2 | `c7i.2xlarge`, Ubuntu 24.04, 40 GB gp3 | hosts the Decider weights; ~$0.36/h |
+| EC2 (CPU) | `c7i.2xlarge`, Ubuntu 24.04 | reproducible without a GPU quota; ~$0.36/h |
+| EC2 (GPU) | `g5.xlarge`, NVIDIA A10G 24 GB | where the latency numbers come from; ~$1.01/h |
 | IAM role | `roadsense-ec2-role` | instance profile — no user keys on the box |
-| S3 | `roadsense-demo-521106215898` | traces and assets; public access blocked |
+| S3 | `roadsense-demo-<account-id>` | traces and assets; public access blocked |
 | Bedrock | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | us-east-1 inference profile |
 | Rekognition | `DetectLabels`, `DetectText` | us-east-1 |
 
@@ -108,21 +109,33 @@ Minimum IAM for the agent: `bedrock:InvokeModel` + `bedrock:Converse` on
 foundation-model and inference-profile ARNs; `rekognition:DetectLabels` and
 `rekognition:DetectText`; `s3:GetObject`/`PutObject` scoped to the project bucket.
 
-The GPU path is untested here: 4 GB of VRAM on the development laptop could not hold
-a 2B model comfortably, so every reported latency is CPU.
+Running on a GPU needs an `All G and VT instances` service quota above zero; it is
+zero by default on a new account and takes a support case to raise.
 
 ## Measured characteristics
 
-| | Value | How it was obtained |
-|---|---|---|
-| Decider model load | 39.8 s | once per process, EC2 CPU |
-| Decider per decision | ~2.6–3.7 s | two questions per call |
-| Rekognition per call | 0.14–1.3 s | real calls, us-east-1 |
-| Decider tokens | ~290–480 in, 2 out | `resp.usage` |
+| | CPU (c7i.2xlarge) | GPU (A10G) | How it was obtained |
+|---|---|---|---|
+| Model load | 39.8 s | 10–45 s | once per process |
+| Per decision, 1 question | 1 278 ms | **78 ms** | `scripts/profile_latency.py`, 303-char state |
+| Per decision, 2 questions | 2 241 ms | **163 ms** | the configuration the agent ships with |
+| Rekognition per call | 0.14–1.3 s | same | real calls, us-east-1 |
+| Decider tokens | ~290–480 in, 2 out | same | `resp.usage` |
 
-`transformers` reports that `causal_conv1d` and `flash-linear-attention` are not
-installed and falls back to reference kernels, so the latency above is an upper
-bound rather than the model's best.
+Three things explain the gap, and only one of them is a setting:
+
+- **dtype.** On CUDA the torso stays in bfloat16; on CPU the package deliberately
+  upcasts it to fp32, because CPU bf16 kernels are slower than fp32 ones.
+- **Kernels.** `causal-conv1d` is a source-only CUDA extension and
+  `flash-linear-attention` is Triton, so on a CPU host the fallback warnings
+  `transformers` prints are accurate *and* unfixable. On GPU,
+  `flash-linear-attention` installs cleanly and is worth 20–31 %; `causal-conv1d`
+  did not finish compiling, so there is headroom still unclaimed.
+- **The second question.** It costs ~0.9 s on CPU and ~85 ms on GPU, and nothing in
+  the control flow reads it — see `docs/findings.md`.
+
+For reference, the package's own source quotes 3.5 s for a 256-token question in fp32
+on an M3 Pro, so the CPU column is in line with what its authors measured.
 
 ## Safety and privacy
 
