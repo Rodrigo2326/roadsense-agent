@@ -35,7 +35,7 @@ question + image path
    AgentState ──render_for_decider()──▶ text  ──┐
         ▲                                        │
         │                             ┌──────────▼────────────┐
-        │                             │  Strands Decider 2B   │  (EC2, CPU)
+        │                             │  Strands Decider 2B   │  (EC2, GPU)
         │                             │  choice + noul        │
         │                             └──────────┬────────────┘
         │                                        │ probabilities, confidence
@@ -141,7 +141,12 @@ on an M3 Pro, so the CPU column is in line with what its authors measured.
 
 - No credentials in the repo, in logs, or on the instance — the EC2 box authenticates
   with an instance profile.
-- Tool payloads are kept in the trace for auditability; the demo images are synthetic
-  and contain no people, faces, or plates.
+- Tool payloads are kept in the trace for auditability.
+- The benchmark images are synthetic and contain no people, faces or plates. The demo
+  also ships four Wikimedia Commons photographs (three CC0, one CC BY), and those are
+  real traffic: Rekognition read two number plates off the street scene on the first
+  try. `scripts/fetch_commons_assets.py` blurs every text region it can find in that
+  file and re-reads it afterwards, failing if any word survives. Attribution and what
+  was changed are in `demo/photos/ATTRIBUTION.md`.
 - Face and plate recognition are deliberately not used. `DetectLabels` and
   `DetectText` are the only Rekognition operations the IAM policy allows.
