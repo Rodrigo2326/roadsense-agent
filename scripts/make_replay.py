@@ -233,6 +233,8 @@ def collect_benchmark(results_dir: pathlib.Path) -> dict | None:
             "invalid": sum(1 for x in invalid if x["behavior_correct"] and x["tool_set_exact"]),
             "invalidTotal": len(invalid),
             "ms": round(summary["selector_ms_median"]),
+            "msRaw": summary["selector_ms_median"],
+            "steps": summary["steps_per_case"],
             # Only a hosted model bills per token. Decider runs on an instance charged
             # by the hour, and a rule bills nothing at all -- counting either as
             # "billable" would be the kind of mistake that makes a whole table suspect.
@@ -257,7 +259,9 @@ def collect_benchmark(results_dir: pathlib.Path) -> dict | None:
         "rows": rows,
         "cases": next(iter(json.loads((results_dir / "results_gpu.json").read_text(encoding="utf-8"))
                            ["results"]))["summary"]["cases"],
-        "perDecision": round(decider["ms"] / 2.43) if decider else None,
+        # Divide before rounding: rounding the per-case figure first and dividing that
+        # gives 95 where the measurement says 94.4, and then two documents disagree.
+        "perDecision": round(decider["msRaw"] / decider["steps"]) if decider else None,
         "speedup": round(best["ms"] / decider["ms"], 1) if (decider and best) else None,
         "rivalName": best["label"] if best else None,
         "ceiling": max((r["toolExact"] for r in llms), default=None),
