@@ -90,9 +90,9 @@ Cuando termine, señala en este orden:
 
 Señala el bloque de evidencia naranja.
 
-> "It does not invent the word. And look at the last decision — 0.55 on answering,
-> 0.45 on asking for a better image. It is genuinely torn, and it says so with a
-> number."
+> "It does not invent the word. The menu is down to two, and it answers — 0.862 against
+> 0.138 for asking for a better photograph. But read the line underneath: confidence
+> 0.724, and P(evidence enough) 0.270. It answers, and tells you the ground is thin."
 
 Lee en voz alta el principio de la respuesta final:
 

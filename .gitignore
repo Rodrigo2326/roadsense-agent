@@ -16,3 +16,8 @@ site/
 
 # registro interno de trabajo: contiene IDs de cuenta, instancias e IPs propias
 IMPLEMENTATION_STATUS.md
+
+# Recorded demo takes: 10+ MB each and regenerable with scripts/record_demo.mjs
+demo/video/
+# Narración generada: regenerable con scripts/make_voiceover.py
+demo/audio/
