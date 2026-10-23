@@ -1,14 +1,26 @@
-# Four frontier models, one ceiling: measuring what a 2B decision model actually costs you
+# RoadSense: an agent that decides what evidence to gather, then decides again when it sees it
 
 **Tags:** `#strands-decider-2b` `#tool-selection`
 **Repo:** https://github.com/Rodrigo2326/roadsense-agent · **Demo:** https://rodrigo2326.github.io/roadsense-agent/ · Apache-2.0
 
-I set out to build an agent that decides what evidence to gather before it answers, and
-to find out what using **Strands Decider 2B** for those decisions costs compared to
-asking Claude. The second part turned out to be the interesting one.
+Ask an agent a question about a photograph and it usually does one of two things: runs
+every tool it has, or picks one from the wording of the question and commits. Neither is
+a decision. The first is a shopping list; the second is a regex with extra steps.
 
-Here is the headline, from 37 cases run through seven selectors in the same loop, with
-the same tools and the same writer — only the thing choosing the next action changes:
+**RoadSense does neither.** It has four actions, it picks one, it looks at what came
+back, and then it picks again — and the second pick is frequently not the one it would
+have made first.
+
+**The decision I handed to Strands Decider 2B is exactly that one: which action to take
+next, given everything learned so far.** Not how to phrase an answer, not what the
+photograph contains — only *what to do next*. Decider scores the four options and
+returns a distribution with a calibrated confidence, in about 94 ms, without writing a
+single word. Amazon Rekognition gathers the evidence. Amazon Bedrock writes the final
+answer and never sees the image, so it cannot describe anything the tools did not find.
+
+Then I measured what handing that decision to a 2B model costs, against Claude doing
+the identical job. 37 cases, seven selectors, the same loop, the same tools and the
+same writer — only the thing choosing the next action changes:
 
 | | keyword rule | Haiku 4.5 | Sonnet 4.6 | Opus 4.5 | **Decider 2B** |
 |---|---|---|---|---|---|
@@ -36,13 +48,9 @@ rather than asserted.
 
 ---
 
-## The agent, briefly
+## How the agent works
 
-Ask a question about a road photograph and most agents do one of two things: run every
-tool they have, or pick one from the wording of the question. Neither is a decision.
-
-RoadSense has four actions and takes one at a time, seeing what came back before
-choosing the next:
+Four actions, taken one at a time, each chosen after seeing what the last one returned:
 
 | action | what it does |
 |---|---|
