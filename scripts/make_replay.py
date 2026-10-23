@@ -548,6 +548,7 @@ footer a{color:var(--muted)}
 
 <script>
 const SCENES = __SCENES__, ORDER = __ORDER__, LABEL = __LABELS__, REPO = __REPO__;
+const VIDEO = __VIDEO__, ARTICLE = __ARTICLE__;
 const $ = s => document.querySelector(s);
 const stage = $("#stage"), playBtn = $("#play");
 let current = SCENES[0], pace = "read", playing = false, timers = [];
@@ -872,8 +873,11 @@ $("#foot").innerHTML =
   `Replayed from traces produced by <code>eval/run_benchmark.py</code> on an NVIDIA A10G. ` +
   `Probabilities, confidence and latency are read straight from the model's response. ` +
   `To run it on your own photograph, clone the repo &mdash; the live server is not public, ` +
-  `because every run spends real money. ` + (REPO ? `<a href="${REPO}">${REPO}</a> &middot; ` : ``) +
-  `Apache-2.0.`;
+  `because every run spends real money. ` +
+  [REPO && `<a href="${REPO}">source</a>`,
+   VIDEO && `<a href="${VIDEO}">video</a>`,
+   ARTICLE && `<a href="${ARTICLE}">write-up</a>`,
+  ].filter(Boolean).join(` &middot; `) + ` &middot; Apache-2.0.`;
 reset();
 </script>
 """
@@ -886,6 +890,8 @@ def main() -> int:
     ap.add_argument("--photos", default=str(ROOT / "eval/results/results_photos.json"),
                     help="traces from the real photographs; omit and the page shows only synthetic")
     ap.add_argument("--repo", default="", help="repository URL shown in the footer")
+    ap.add_argument("--video", default="", help="demo video URL shown in the footer")
+    ap.add_argument("--article", default="", help="write-up URL shown in the footer")
     ap.add_argument("--api", default="",
                     help="base URL of a live server; the page enables uploads when it answers")
     args = ap.parse_args()
@@ -900,6 +906,8 @@ def main() -> int:
         .replace("__ORDER__", json.dumps(ACTION_ORDER))
         .replace("__LABELS__", json.dumps(ACTION_LABEL))
         .replace("__REPO__", json.dumps(args.repo))
+        .replace("__VIDEO__", json.dumps(args.video))
+        .replace("__ARTICLE__", json.dumps(args.article))
         .replace("__API__", json.dumps(args.api))
         .replace("__BENCH__", json.dumps(bench))
     )

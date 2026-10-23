@@ -38,14 +38,15 @@ jobs:
         run: |
           python scripts/make_replay.py \
             --out site/index.html \
-            --repo "https://github.com/${{ github.repository }}"
+            --repo "https://github.com/${{ github.repository }}"             --video "https://youtu.be/Iql1g4KrOIU"             --article "https://builder.aws.com/project/3L5CMTZwnqiBw4pjYZWMmR2lw5F/roadsense-an-agent-that-decides-what-evidence-to-gather-then-decides-again-when-it-sees-it"
 
       - name: Check it actually contains the traces
         run: |
           python - <<'PY'
           import json, pathlib, re, sys
           html = pathlib.Path("site/index.html").read_text(encoding="utf-8")
-          for placeholder in ("__SCENES__", "__ORDER__", "__LABELS__", "__API__", "__REPO__"):
+          for placeholder in ("__SCENES__", "__ORDER__", "__LABELS__", "__API__", "__REPO__",
+                              "__VIDEO__", "__ARTICLE__"):
               assert placeholder not in html, f"{placeholder} was never substituted"
           scenes = json.loads(re.search(r"const SCENES = (\[.*?\]), ORDER", html, re.S).group(1))
           assert len(scenes) >= 3, f"only {len(scenes)} scenes embedded"
