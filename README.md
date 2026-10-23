@@ -21,6 +21,28 @@ collision risk, or what a driver should do.
 
 ---
 
+## Start here
+
+|  |  |
+|---|---|
+| **Live demo** — every trace below, replayable in the browser | https://rodrigo2326.github.io/roadsense-agent/ |
+| **Video**, 2:24 | https://youtu.be/Iql1g4KrOIU |
+| **Article** — AWS Builder Center | [RoadSense: an agent that decides what evidence to gather…](https://builder.aws.com/project/3L5CMTZwnqiBw4pjYZWMmR2lw5F/roadsense-an-agent-that-decides-what-evidence-to-gather-then-decides-again-when-it-sees-it) |
+
+The decision handed to Decider 2B, and where to read it:
+
+|  |  |
+|---|---|
+| The loop itself, with no road or AWS call in it | [`src/roadsense/pattern/evidence_seeking.py`](src/roadsense/pattern/evidence_seeking.py) |
+| Why the pattern is shaped this way | [`docs/decision-pattern.md`](docs/decision-pattern.md) |
+| The domain wiring — four actions, two tools | [`src/roadsense/agent.py`](src/roadsense/agent.py) |
+| Raw benchmark output, 37 cases × 7 selectors | [`eval/results/`](eval/results/) |
+
+Every figure quoted anywhere in this repo is read out of `eval/results/`. The demo page
+is regenerated from those files on each push, so it cannot drift from the data.
+
+---
+
 ## What a run looks like
 
 ```
